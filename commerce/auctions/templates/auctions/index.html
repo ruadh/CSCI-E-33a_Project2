@@ -1,7 +1,18 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    <h2>Active Listings</h2>
-
-    TODO
+<h2>Active Listings</h2>
+{% for listing in listings %}
+<div class="listing">
+    <img src="{{listing.image}}" class="thumbnail-image">
+    <div>
+        <h3>{{listing.title}}</h3>
+        <p><span class="label">Price:</span> ${{listing.starting_price}} <span class="dev">TO DO: current price</span>
+        </p>
+        <p>{{listing.description}}</p>
+        <p><span class="label">Listed:</span> {{listing.timestamp}}</p>
+        <a href="{% url 'listing' listing.id %}">View Listing</a>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

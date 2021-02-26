@@ -1,12 +1,14 @@
 from django.contrib import admin
 
-from .models import User, Listing, Category, Bid, Comment, WishlistItem
+from .models import User, Listing, Category, Bid, Comment, WatchlistItem
 
-# Register your models here.
+# Register your models here
+class WatchListItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'listing', 'watcher')
 
 admin.site.register(User)
 admin.site.register(Listing)
 admin.site.register(Category)
 admin.site.register(Bid)
 admin.site.register(Comment)
-admin.site.register(WishlistItem)
+admin.site.register(WatchlistItem, WatchListItemAdmin)

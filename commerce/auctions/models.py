@@ -21,7 +21,8 @@ class Listing(models.Model):
     description = models.TextField(max_length=2000)
     starting_price = models.DecimalField(max_digits=9, decimal_places=2)
     is_active = models.BooleanField(default=True)
-    image = models.URLField(null=True, blank=True, default='static/no_photo.png')
+    image = models.URLField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.owner.username}\'s {self.title}'
@@ -46,10 +47,14 @@ class Comment(models.Model):
     def __str__(self):
         return f'{self.timestamp.strftime("%x %X")} - {self.commenter.username} on {self.listing.title}'
 
-class WishlistItem(models.Model):
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='wishlist_items')
-    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_items')
-    comment = models.TextField(max_length=300)
+class WatchlistItem(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='watchlist_items')
+    watcher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watchlist_items')
+
+    class Meta:
+        # Don't let a user add duplicate items to their wishlist
+        # CITATION:  I learned about unique_together from https://stackoverflow.com/a/2201687 but its documentation pointed me to UniqueConstraint instead
+        constraints = [ models.UniqueConstraint(fields=['listing', 'watcher'], name='unique watchlist entry') ]
 
     def __str__(self):
         return f'{self.listing}'

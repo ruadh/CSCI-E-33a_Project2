@@ -1,0 +1,40 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+<h2>{{listing.title}}</h2>
+<p><span class="label">Listed:</span> {{listing.owner}} on {{listing.timestamp}}</p>
+<img src="{{listing.image}}" class="detail-image">
+<p>{{listing.description}}</p>
+
+<h4>${{listing.starting_price}}</h4>
+<p class="dev">TO DO: show current price instead</p>
+
+<!-- Show different content to the owner vs. bidders -->
+{% if user == listing.owner %}
+    <a href="" class="dev">TO DO:  Accept bid and close auction</a>
+{% else %}
+    <p class="dev">TO DO:  Add status (display it, and prevent bids)</p>
+    <h3>Bid Now</h3>
+    {% if user.is_authenticated %}
+        <p>Bid form goes here</p>
+    {% else %}
+    <p><a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">create an account</a> to bid.</p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        {% if message %}
+            <p class="{{message_class}}">{{message}}</p>
+        {% endif %}
+        <!-- Hide wishlist links if an add/remove error was reported -->
+        {% if not message_class %}
+            {% if in_watchlist %}
+                <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
+            {% else %}
+                <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
+            {% endif %} 
+        {% endif %}
+    {% endif %}
+
+{% endif %}
+
+{% endblock %}

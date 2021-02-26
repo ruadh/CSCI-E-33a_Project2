@@ -1,3 +1,41 @@
 body {
     padding: 10px;
 }
+
+.listing {
+    /* background-color: lightgray; */
+    border: solid lightgray 1px;
+    padding: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.listing div {
+    padding-left: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.thumbnail-image {
+    width: 25vw;
+    /* height: auto; */
+}
+
+.detail-image {
+    height: 50vh;
+    padding-bottom: 2rem;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.dev {
+    color: green;
+}
+
+.error {
+    color: red;
+    font-style: italic;
+}

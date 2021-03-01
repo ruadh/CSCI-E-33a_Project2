@@ -29,6 +29,7 @@
 {% else %}
     <!-- Prompt user to bid on active auction or login -->
     {% if listing.is_active %}
+        <!-- TO DO:  replace is_authenticated with @login_required -->
         {% if user.is_authenticated %}
             <!-- Allow logged-in users to add the listing to watchlist -->
             {% if message %}
@@ -59,8 +60,5 @@
     {% endif %}
 
 {% endif %}
-
-
-
 
 {% endblock %}

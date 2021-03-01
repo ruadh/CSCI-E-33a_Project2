@@ -16,9 +16,13 @@
         <div class="form-group">
             <input class="form-control" type="password" name="password" placeholder="Password">
         </div>
+        <!-- CITATION:  passing next as a form input based on https://stackoverflow.com/a/21693784 -->
+        <input type="hidden" name="next" value="{{ request.GET.next }}" />
         <input class="btn btn-primary" type="submit" value="Login">
     </form>
 
     Don't have an account? <a href="{% url 'register' %}">Register here.</a>
+
+    <p class="dev">NEXT:  {{ request.GET.next }} /></p>
 
 {% endblock %}

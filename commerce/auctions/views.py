@@ -4,8 +4,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from .models import User, Listing, Category, Bid, Comment, WatchlistItem
-from .models import User
 from django.db.models import Max
+from django.contrib.auth.decorators import login_required
 
 def index(request):
     return render(request, 'auctions/index.html', {'listings': Listing.objects.all()})
@@ -18,11 +18,16 @@ def login_view(request):
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
+        next = request.POST['next']
 
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            return HttpResponseRedirect(reverse('index'))
+            # CITATION:  'next' approach adapted from:  https://stackoverflow.com/a/21693784
+            if next:
+                return HttpResponseRedirect(request.POST.get('next'))
+            else:
+                return HttpResponseRedirect(reverse('index'))
         else:
             return render(request, 'auctions/login.html', {
                 'message': 'Invalid username and/or password.'
@@ -78,8 +83,13 @@ def listing_view(request, listing_id):
     })
 
 
-# Add an item to the user's watch list
+# Add an item to the user's watchlist
+# NOTE:  I chose to allow users to add their own listings to their watch lists, since
+#           the spec doesn't call for any other place for owners to track their own listings.
+#        I also chose to allow users to watchlist closed auctions, since they may want to shop for
+#           or list something similar in the future.  (ex: eBay lets you track/search for sold items)
 
+@login_required
 def watchlist_add(request, listing_id):
     try:
         item = WatchlistItem(listing=Listing.objects.get(pk=listing_id), watcher=request.user)
@@ -110,6 +120,7 @@ def watchlist_add(request, listing_id):
 
 # Remove an item from the user's watch list
 
+@login_required
 def watchlist_remove(request, listing_id):
     try:
         item = WatchlistItem.objects.get(listing=Listing.objects.get(pk=listing_id), watcher=request.user)

@@ -2,11 +2,10 @@
 
 {% block body %}
 <h2>{{listing.title}}</h2>
+<h4>${{listing.bid_price}}</h4>
 <p><span class="label">Listed:</span> {{listing.owner}} on {{listing.timestamp}}</p>
 <img src="{{listing.image}}" alt="product image" class="detail-image">
 <p>{{listing.description}}</p>
-
-<h4>${{listing.bid_price}}</h4>
 
 <!-- Owner's auction controls: -->
 {% if user == listing.owner %}
@@ -31,6 +30,21 @@
     <!-- Prompt user to bid on active auction or login -->
     {% if listing.is_active %}
         {% if user.is_authenticated %}
+            <!-- Allow logged-in users to add the listing to watchlist -->
+            {% if message %}
+                <p class="{{message_class}}">{{message}}</p>
+            {% endif %}
+            <!-- Hide watchlist links if an add/remove error was reported -->
+            {% if not message_class %}
+                {% if in_watchlist %}
+                    <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
+                {% else %}
+                    <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
+                {% endif %} 
+            {% endif %}
+
+            <!-- Allow logged-in users to bid -->
+            <h4>Bid Now</h4>
             <p class="dev">Bid form goes here</p>
         {% else %}
             <p><a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">create an account</a> to bid.</p>

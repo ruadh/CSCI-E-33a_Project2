@@ -2,8 +2,8 @@
 
 {% block watchlist_controls %}
 
-{% if message %}
-    <p class="error">{{message}}</p>
+{% if watchlist_message %}
+    <p class="error">{{watchlist_message}}</p>
 {% else %}
     {% if in_watchlist %}
         <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>

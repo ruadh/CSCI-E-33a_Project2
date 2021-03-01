@@ -58,6 +58,12 @@ form input[type="submit"] {
     display: block;
 }
 
+.message {
+        background-color: whitesmoke;
+        padding: 1rem;
+        margin-top: 1rem;
+}
+
 
 /* @media(min-width: 1200px) {
     blockquote {

@@ -2,6 +2,14 @@
 
 {% block body %}
 
+<!-- Status messages -->
+{% if message %}
+<!-- TO DO:  style error vs. confirmation messages -->
+    <div class="message">
+        <p class="error">{{ message }}</p>
+    </div>
+{% endif %}    
+
 <!-- Listing Info -->
 <h2>{{listing.title}}</h2>
 <h4>${{listing.bid_price}}</h4>
@@ -11,8 +19,11 @@
 <img src="{{listing.image}}" alt="product image" class="detail-image">
 <p>{{listing.description}}</p>
 
+
+
 <!-- Owner's auction controls: -->
 {% if user == listing.owner %}
+    <h4>Manage Auction</h4>
     <!-- Close or cancel an open auction -->
     {% if listing.is_active %}
         {% if listing.starting_price == listing.bid_price %}
@@ -31,17 +42,25 @@
 
 <!-- Bidder's auction controls -->
 {% else %}
-    <!-- Prompt user to bid on active auction or login -->
+    <!-- Show the bid form -->
     {% if listing.is_active %}
-        <!-- TO DO:  replace is_authenticated with @login_required -->
-        <h4>Bid Now</h4>
-        <p class="dev">Bid form goes here</p>
+    <h4>Bid Now</h4>
+        {% if user.is_authenticated %}
+            <form action="{% url 'bid_add' %}" method="POST">
+                {% csrf_token %}
+                {{ bid_form}}
+                <input type="Submit" name="Bid Now">
+            </form>
+        {% else %}
+            <p>You must <a href="{% url 'login' %}">log in</a> to bid.</p>
+        {% endif %}
     <!-- Show an "auction closed" message -->
     {% else %}
+        <h4>Auction closed</h4>
         {% if listing.winner == request.user  %}
-            <p>Congratulations! You won this auction.</p>
+            <p>Congratulations! You won this item.</p>
         {% else %}
-            <p>This auction is closed.</p>
+            <p>You did not win this item.</p>
         {% endif %}
     {% endif %}
 
@@ -49,11 +68,15 @@
 
 <!-- Comments block -->
 <h4>Comments</h4>
-    <form action="{% url 'comment_add' %}" method="POST">
-        {% csrf_token %}
-        {{ comment_form }}
-        <input type="submit">
-    </form>
+    {% if user.is_authenticated %}
+        <form action="{% url 'comment_add' %}" method="POST">
+            {% csrf_token %}
+            {{ comment_form }}
+            <input type="submit">
+        </form>
+    {% else %}
+        <p>You must <a href="{% url 'login' %}">log in</a> to post comments.</p>
+    {% endif %}
 {% for comment in comments %}
 <blockquote>
     <p class="comment-body">{{comment.body}}</p>

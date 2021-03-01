@@ -1,5 +1,7 @@
 body {
     padding: 10px;
+    margin-left: 50px;
+    margin-right: 50px;
 }
 
 .listing {
@@ -39,3 +41,26 @@ body {
     color: red;
     font-style: italic;
 }
+
+.comment-body {
+    font-style: italic;
+}
+
+blockquote {
+    /* border: solid lightgray 1px; */
+    background-color: whitesmoke;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+form label,
+form input[type="submit"] {
+    display: block;
+}
+
+
+/* @media(min-width: 1200px) {
+    blockquote {
+        max-width: 75vw;
+    }
+} */

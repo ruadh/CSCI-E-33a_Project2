@@ -7,11 +7,14 @@
     <img src="{{watchlist_item.listing.image}}" class="thumbnail-image">
     <div>
         <h3>{{watchlist_item.listing.title}}</h3>
-        <p><span class="label">Price:</span> ${{watchlist_item.listing.starting_price}} <span class="dev">TO DO: current price</span>
-        </p>
+        {% if watchlist_item.listing.is_active %}
+            <p><span class="label">Status:</span> Active</p>
+        {% else %}
+            <p><span class="label">Status:</span> Closed</p>
+        {% endif %}
+        <p><span class="label">Price:</span> ${{watchlist_item.listing.bid_price}}</p>
         <p>{{watchlist_item.listing.description}}</p>
         <p><span class="label">Listed:</span> {{watchlist_item.listing.timestamp}}</p>
-        <p class="dev">TO DO:  Add status (display it, and prevent bids)</p>
         <a href="{% url 'listing' watchlist_item.listing.id %}">View Listing</a>
     </div>
 </div>

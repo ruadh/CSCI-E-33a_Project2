@@ -1,8 +1,12 @@
 {% extends 'auctions/layout.html' %}
 
 {% block body %}
+
+<!-- Listing Info -->
 <h2>{{listing.title}}</h2>
 <h4>${{listing.bid_price}}</h4>
+<!-- CITATION:  learned how to use include from: https://bit.ly/3b6Ocbc -->
+{% include 'auctions/watchlist_controls.html' %}
 <p><span class="label">Listed:</span> {{listing.owner}} on {{listing.timestamp}}</p>
 <img src="{{listing.image}}" alt="product image" class="detail-image">
 <p>{{listing.description}}</p>
@@ -30,29 +34,11 @@
     <!-- Prompt user to bid on active auction or login -->
     {% if listing.is_active %}
         <!-- TO DO:  replace is_authenticated with @login_required -->
-        {% if user.is_authenticated %}
-            <!-- Allow logged-in users to add the listing to watchlist -->
-            {% if message %}
-                <p class="{{message_class}}">{{message}}</p>
-            {% endif %}
-            <!-- Hide watchlist links if an add/remove error was reported -->
-            {% if not message_class %}
-                {% if in_watchlist %}
-                    <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
-                {% else %}
-                    <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
-                {% endif %} 
-            {% endif %}
-
-            <!-- Allow logged-in users to bid -->
-            <h4>Bid Now</h4>
-            <p class="dev">Bid form goes here</p>
-        {% else %}
-            <p><a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">create an account</a> to bid.</p>
-        {% endif %}
+        <h4>Bid Now</h4>
+        <p class="dev">Bid form goes here</p>
     <!-- Show an "auction closed" message -->
     {% else %}
-        {% if user.is_authenticated and listing.winner == request.user  %}
+        {% if listing.winner == request.user  %}
             <p>Congratulations! You won this auction.</p>
         {% else %}
             <p>This auction is closed.</p>
@@ -60,5 +46,19 @@
     {% endif %}
 
 {% endif %}
+
+<!-- Comments block -->
+<h4>Comments</h4>
+    <form action="{% url 'comment_add' %}" method="POST">
+        {% csrf_token %}
+        {{ comment_form }}
+        <input type="submit">
+    </form>
+{% for comment in comments %}
+<blockquote>
+    <p class="comment-body">{{comment.body}}</p>
+    <p>- {{comment.commenter}}, {{comment.timestamp}}</p>
+</blockquote>
+{% endfor %}
 
 {% endblock %}

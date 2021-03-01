@@ -3,7 +3,9 @@ from django.db import models
 from django.db.models import Max
 
 class User(AbstractUser):
-    pass
+
+    def __str__(self):
+        return f'{self.username}'
 
 
 class Category(models.Model):

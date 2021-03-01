@@ -14,7 +14,8 @@ urlpatterns = [
     path("close/<int:listing_id>", views.close_listing, name="close_listing"),
     path("comment_add", views.comment_add, name="comment_add"),
     path("bid_add", views.bid_add, name="bid_add"),
-
+    path("categories", views.category_index, name="category_index"),
+    path("category/<int:category_id>", views.category_listing, name="category_listing"),
 
     # TEMP FOR TESTING
     path('dev', views.dev, name="dev")

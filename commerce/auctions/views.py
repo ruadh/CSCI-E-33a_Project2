@@ -25,14 +25,14 @@ class CommentForm(forms.Form):
 
 class BidForm(forms.Form):
     listing = forms.IntegerField(widget=forms.HiddenInput)
-    # current_bid = forms.DecimalField(max_digits=9, decimal_places=2, widget=forms.HiddenInput)
-    # TO DO:  Replace this with more than the current bid
+    # TO DO:  can we validate the amount before the user submits the form? Ideal, but not required
     amount = forms.DecimalField(required=True, max_digits=9, decimal_places=2)
+
 
 # METHODS
 
-def index(request):
-    return render(request, 'auctions/index.html', {'listings': Listing.objects.all()})
+def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
+    return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
 
 # AUTHENTICATION METHODS
@@ -183,6 +183,24 @@ def watchlist_view(request):
     return render(request, 'auctions/watchlist.html', {
         'watchlist_items': WatchlistItem.objects.filter(watcher=request.user).order_by('-id')
     })
+
+
+
+# CATEGORY METHODS
+
+# View an index of all categories
+
+def category_index(request):
+    return render(request, 'auctions/categories.html', {
+        'categories': Category.objects.all()
+    })
+
+
+# View a list of all listings for a given category
+def category_listing(request, category_id):
+    category_name = Category.objects.get(pk=category_id).name
+    listings = Listing.objects.filter(category=category_id, is_active=True)
+    return index(request, listings, category_name)
 
 
 # COMMENT METHODS

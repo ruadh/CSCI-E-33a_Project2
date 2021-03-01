@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from .models import User, Listing, Category, Bid, Comment, WatchlistItem
 from .models import User
-
+from django.db.models import Max
 
 def index(request):
     return render(request, 'auctions/index.html', {'listings': Listing.objects.all()})
@@ -67,7 +67,7 @@ def register(request):
 
 def listing_view(request, listing_id):
     # Determine whether this listing is in the user's watchlist
-    if WatchlistItem.objects.filter(listing=listing_id, watcher=request.user):
+    if request.user.is_authenticated and WatchlistItem.objects.filter(listing=listing_id, watcher=request.user):
         in_watchlist = True
     else:
         in_watchlist = False
@@ -137,5 +137,15 @@ def watchlist_view(request):
         'watchlist_items': WatchlistItem.objects.filter(watcher=request.user)
     })
 
+
+# Close a listing:  ends the auction, making the highest bidder the winner
+
+def close_listing(request, listing_id):
+    # Mark the listing as closed
+    listing =Listing.objects.get(pk=listing_id)
+    listing.is_active = False
+    listing.save()
+    # # Re-render the page with the new information
+    return listing_view(request, listing_id)
 
 

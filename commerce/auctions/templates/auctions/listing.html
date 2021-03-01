@@ -3,38 +3,50 @@
 {% block body %}
 <h2>{{listing.title}}</h2>
 <p><span class="label">Listed:</span> {{listing.owner}} on {{listing.timestamp}}</p>
-<img src="{{listing.image}}" class="detail-image">
+<img src="{{listing.image}}" alt="product image" class="detail-image">
 <p>{{listing.description}}</p>
 
-<h4>${{listing.starting_price}}</h4>
-<p class="dev">TO DO: show current price instead</p>
+<h4>${{listing.bid_price}}</h4>
 
-<!-- Show different content to the owner vs. bidders -->
+<!-- Owner's auction controls: -->
 {% if user == listing.owner %}
-    <a href="" class="dev">TO DO:  Accept bid and close auction</a>
-{% else %}
-    <p class="dev">TO DO:  Add status (display it, and prevent bids)</p>
-    <h3>Bid Now</h3>
-    {% if user.is_authenticated %}
-        <p>Bid form goes here</p>
+    <!-- Close or cancel an open auction -->
+    {% if listing.is_active %}
+        {% if listing.starting_price == listing.bid_price %}
+            <a href="{% url 'close_listing' listing_id %}">Cancel auction</a>
+        {% else %}
+            <a href="{% url 'close_listing' listing_id %}">Accept bid and close auction</a>
+        {% endif %}
+    <!-- Show the winner, if any -->
     {% else %}
-    <p><a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">create an account</a> to bid.</p>
+        {% if listing.starting_price == listing.bid_price %}
+            <p>Auction canceled. There is no winner.</p>
+        {% else %}
+            <p><span class="label">Winner:</span> {{listing.winner}}</p>
+        {% endif %}
     {% endif %}
 
-    {% if user.is_authenticated %}
-        {% if message %}
-            <p class="{{message_class}}">{{message}}</p>
+<!-- Bidder's auction controls -->
+{% else %}
+    <!-- Prompt user to bid on active auction or login -->
+    {% if listing.is_active %}
+        {% if user.is_authenticated %}
+            <p class="dev">Bid form goes here</p>
+        {% else %}
+            <p><a href="{% url 'login' %}">Log in</a> or <a href="{% url 'register' %}">create an account</a> to bid.</p>
         {% endif %}
-        <!-- Hide wishlist links if an add/remove error was reported -->
-        {% if not message_class %}
-            {% if in_watchlist %}
-                <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
-            {% else %}
-                <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
-            {% endif %} 
+    <!-- Show an "auction closed" message -->
+    {% else %}
+        {% if user.is_authenticated and listing.winner == request.user  %}
+            <p>Congratulations! You won this auction.</p>
+        {% else %}
+            <p>This auction is closed.</p>
         {% endif %}
     {% endif %}
 
 {% endif %}
+
+
+
 
 {% endblock %}

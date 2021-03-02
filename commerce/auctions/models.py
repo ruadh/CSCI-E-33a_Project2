@@ -16,18 +16,20 @@ class Category(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+    class Meta:
+        verbose_name_plural = "Categories"
+
 
 class Listing(models.Model):
-    # CITATION:  Character limits based on: https://www.hellotax.com/blog/amazon/listing/optimization/
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='listings')
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, related_name='listings', null=True, blank=True)
     title = models.CharField(max_length=150)
     description = models.TextField(max_length=2000)
-    starting_price = models.DecimalField(max_digits=9, decimal_places=2, validators=[ MinValueValidator(decimal.Decimal('0.01')) ])
+    starting_price = models.DecimalField(max_digits=9, decimal_places=2)
     is_active = models.BooleanField(default=True)
-    image = models.URLField(null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True, verbose_name='Image URL')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -36,6 +38,7 @@ class Listing(models.Model):
     
     # Calculated current bid price
     # CITATION:  @property decorator approach based on:  https://stackoverflow.com/a/17682694
+
     @property
     def bid_price(self):
         try:
@@ -48,6 +51,8 @@ class Listing(models.Model):
                 return self.starting_price
         except:
             return 'Error determining current bid'
+
+    # Calculated winner
 
     @property
     def winner(self):
@@ -76,7 +81,7 @@ class Comment(models.Model):
         Listing, on_delete=models.CASCADE, related_name='comments')
     commenter = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='comments')
-    body = models.TextField(max_length=300)
+    body = models.TextField(max_length=300, blank=False, null=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -94,6 +99,7 @@ class WatchlistItem(models.Model):
         # CITATION:  I learned about unique_together from https://stackoverflow.com/a/2201687 but its documentation pointed me to UniqueConstraint instead
         constraints = [models.UniqueConstraint(
             fields=['listing', 'watcher'], name='unique watchlist entry')]
+        verbose_name_plural = "Watchlist Items"
 
     def __str__(self):
         return f'{self.listing}'

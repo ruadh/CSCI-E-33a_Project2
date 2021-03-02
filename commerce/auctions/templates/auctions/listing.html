@@ -4,27 +4,27 @@
   
 <!-- Listing Info -->
 <h2>{{listing.title}}</h2>
-<h4>${{listing.bid_price}}</h4>
 <!-- CITATION:  learned how to use include from: https://bit.ly/3b6Ocbc -->
 {% include 'auctions/watchlist_controls.html' %}
+<p><span class="label">Category:</span> {{listing.category}}</p>
 <p><span class="label">Listed:</span> {{listing.owner}} on {{listing.timestamp}}</p>
-<img src="{{listing.image}}" alt="product image" class="detail-image">
-<p>{{listing.description}}</p>
-
-
+<img src="{{listing.image_url}}" alt="product image" class="detail-image">
+<p><span class="label">Description: </span>{{listing.description}}</p>
 
 <!-- Owner's auction controls: -->
 {% if user == listing.owner %}
     <h4>Manage Auction</h4>
     <!-- Close or cancel an open auction -->
     {% if listing.is_active %}
+        <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
         {% if listing.starting_price == listing.bid_price %}
-            <a href="{% url 'close_listing' listing_id %}">Cancel auction</a>
+            <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Cancel auction</a>
         {% else %}
-            <a href="{% url 'close_listing' listing_id %}">Accept bid and close auction</a>
+            <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Accept bid and close auction</a>
         {% endif %}
     <!-- Show the winner, if any -->
     {% else %}
+        <p><span class="label">Final price: </span>${{listing.bid_price}}</p>
         {% if listing.starting_price == listing.bid_price %}
             <p>Auction canceled. There is no winner.</p>
         {% else %}
@@ -37,17 +37,19 @@
     <!-- Show the bid form -->
     {% if listing.is_active %}
     <h4>Bid Now</h4>
+        <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
         {% if user.is_authenticated %}
             <form action="{% url 'bid_add' %}" method="POST">
                 {% csrf_token %}
                 {{ bid_form}}
-                <input type="Submit" name="Bid Now">
+                <input type="submit" class="btn btn-primary link-as-button">
             </form>
         {% else %}
             <p>You must <a href="{% url 'login' %}">log in</a> to bid.</p>
         {% endif %}
     <!-- Show an "auction closed" message -->
     {% else %}
+        <p><span class="label">Final price: </span>${{listing.bid_price}}</p>
         <h4>Auction closed</h4>
         {% if listing.winner == request.user  %}
             <p>Congratulations! You won this item.</p>
@@ -64,7 +66,7 @@
         <form action="{% url 'comment_add' %}" method="POST">
             {% csrf_token %}
             {{ comment_form }}
-            <input type="submit">
+            <input type="submit" class="btn btn-primary link-as-button">
         </form>
     {% else %}
         <p>You must <a href="{% url 'login' %}">log in</a> to post comments.</p>

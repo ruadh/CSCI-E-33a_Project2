@@ -7,13 +7,15 @@ from .models import User, Listing, Category, Bid, Comment, WatchlistItem
 from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django import forms
+from django.utils import timezone
 import datetime
 
 
 # SETTINGS
 
-# Default listing image courtesy of Videoplasty.com, CC BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0>, via Wikimedia Commons
-placeholder_image = 'https://upload.wikimedia.org/wikipedia/commons/5/53/Price_Tag_Flat_Icon_Vector.svg'
+# Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
+placeholder_image = '/static/auctions/default_photo.png'
+default_timezone = 'America/New_York'
 
 
 # FORM CLASSES
@@ -21,33 +23,38 @@ placeholder_image = 'https://upload.wikimedia.org/wikipedia/commons/5/53/Price_T
 
 # Comment form
 
-class CommentForm(forms.Form):
-    body = forms.CharField(required=True, strip=True,
-                           widget=forms.Textarea, label=None)
-    listing = forms.IntegerField(widget=forms.HiddenInput)
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['body', 'listing']
+        widgets = {
+            'listing': forms.HiddenInput
+        }
 
 
 # Bid Form
 
-class BidForm(forms.Form):
-    listing = forms.IntegerField(widget=forms.HiddenInput)
-    # TO DO:  can we validate the amount before the user submits the form? Ideal, but not required
-    amount = forms.DecimalField(required=True, max_digits=9, decimal_places=2)
+class BidForm(forms.ModelForm):
+    class Meta:
+        model = Bid
+        fields = ['listing', 'amount']
+        widgets = {
+            'listing': forms.HiddenInput
+        }
 
 
 # New Listing Form
 
-class ListingForm(forms.Form):
-    title = forms.CharField(max_length=128, required=True, strip=True)
-    description = forms.CharField(
-        required=True, strip=True, widget=forms.Textarea, label=None)
-    starting_price = forms.DecimalField(max_digits=9, decimal_places=2)
-    category = forms.ModelChoiceField(queryset=Category.objects.all())
-    image = forms.URLField(required=False)
+class ListingForm(forms.ModelForm):
+    class Meta:
+        model = Listing
+        fields = ['title', 'description',
+                  'starting_price', 'category', 'image_url']
 
 
 # AUTHENTICATION METHODS
 
+# Log in
 
 def login_view(request):
     if request.method == 'POST':
@@ -74,10 +81,14 @@ def login_view(request):
         return render(request, 'auctions/login.html')
 
 
+# Log out
+
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse('index'))
 
+
+# Register a new user
 
 def register(request):
     if request.method == 'POST':
@@ -109,9 +120,10 @@ def register(request):
 # LISTING METHODS
 
 # Display a list view of item listings
-# Default is all active listings, but may be called with different criteria by other methods
+# NOTE: Default is all active listings, but may be called with different criteria by other methods
 
 def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
+    timezone.activate(default_timezone)
     return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
 
@@ -129,7 +141,8 @@ def listing_view(request, listing_id, message=''):
     else:
         in_watchlist = False
     # Load a blank bid form with the current price
-    bid_form = BidForm(initial={'listing': listing_id})
+    # bid_form = BidForm(initial={'listing': listing_id})
+    bid_form = BidForm(initial={'listing': listing})
     return render(request, 'auctions/listing.html', {
         'listing_id': listing_id,
         'listing': listing,
@@ -141,16 +154,18 @@ def listing_view(request, listing_id, message=''):
     })
 
 
-# Load the listing form
+# Load the new listing form
+
 @login_required
 def listing_form(request, form=ListingForm(), message=None):
     return render(request, 'auctions/new_listing.html', {
-            'listing_form': form,
-            'message': message
-        })
+        'listing_form': form,
+        'message': message
+    })
 
 
 # Create a new listing
+
 @login_required
 def listing_add(request):
     form = ListingForm(request.POST)
@@ -160,17 +175,17 @@ def listing_add(request):
         title = form.cleaned_data['title']
         description = form.cleaned_data['description']
         starting_price = form.cleaned_data['starting_price']
-        # Check for a positive starting price
+        # Check that the starting price is valid
         if starting_price > 0:
             # If no image was supplied, use the placeholder
-            if form.cleaned_data['image']:
-                image = form.cleaned_data['image']
+            if form.cleaned_data['image_url']:
+                image_url = form.cleaned_data['image_url']
             else:
-                image = placeholder_image
+                image_url = placeholder_image
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
                 listing = Listing(category=category, owner=request.user,  title=title, description=description,
-                                starting_price=starting_price, image=image, )
+                                  starting_price=starting_price, image=image_url, )
                 listing.save()
                 return listing_view(request, listing.id)
             else:
@@ -180,10 +195,11 @@ def listing_add(request):
         else:
             return listing_form(request, form, 'Starting bid must be greater than $0')
     else:
-        return HttpResponse('invalid form')
+        return listing_form(request, form, 'An error occurred while processing your submission.  Your listing has NOT been saved.')
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner
+
 @login_required
 def close_listing(request, listing_id):
     # Mark the listing as closed
@@ -239,8 +255,9 @@ def watchlist_remove(request, listing_id):
 
 # View the user's watch list
 
+@login_required
 def watchlist_view(request):
-    # Show the user's watched items with the most recently-added at the top
+    # Show the user's watched items with the most recently added at the top
     return render(request, 'auctions/watchlist.html', {
         'watchlist_items': WatchlistItem.objects.filter(watcher=request.user).order_by('-id')
     })
@@ -257,6 +274,7 @@ def category_index(request):
 
 
 # View a list of all listings for a given category
+
 def category_listing(request, category_id):
     if category_id == 0:
         category_name = 'Uncategorized'
@@ -271,34 +289,40 @@ def category_listing(request, category_id):
 
 # Submit the comment form
 
+@login_required
 def comment_add(request):
     # Validate and save the comment form
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
-            # Get the listing as an object
-            listing_id = form.cleaned_data['listing']
-            listing = Listing.objects.get(pk=listing_id)
+            # Gather the form fields into comment object
+            listing = form.cleaned_data['listing']
             body = form.cleaned_data['body']
-            comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
-            ), listing=listing, body=body)
-            comment.save()
-            return listing_view(request, listing_id)
+            # Non-empty body validation is performed on the model level, but let's double-check
+            if body:
+                comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
+                ), listing=listing, body=body)
+                # Save the comment to the database and re-render the page
+                comment.save()
+                message = 'Thank you for your comment.'
+            else:
+                message = 'Your comment cannot be blank.'
         else:
-            # TO DO: return an error message to the user
-            return HttpResponse('invalid')
+            message = 'An error occurred while processing your submission.  Your comment has NOT been saved.'
+        return listing_view(request, listing.id, message)
 
 
 # BIDDING METHODS
 
 # Submit a bid
+
 @login_required
 def bid_add(request):
     if request.method == "POST":
         form = BidForm(request.POST)
         if form.is_valid():
             # Gather the bid details
-            listing = Listing.objects.get(pk=form.cleaned_data['listing'])
+            listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
             amount = form.cleaned_data['amount']
             # Validate that the bid is higher than the current price
             if amount <= listing.bid_price:
@@ -325,6 +349,8 @@ def bid_add(request):
 
 # TEMP FOR TESTING
 def dev(request, param='default parameter'):
+    timezone.activate('America/New_York')
+    param = timezone.get_current_timezone_name()
     return render(request, 'auctions/dev.html', {
         'param': param,
     })

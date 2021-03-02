@@ -24,9 +24,12 @@
                 <a class="nav-link" href="{% url 'category_index' %}">Browse By Category</a>
             </li>
             {% if user.is_authenticated %}
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'watchlist_view' %}">My Watchlist</a>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'listing_form' %}">New Listing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'watchlist_view' %}">My Watchlist</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
                 </li>
@@ -40,6 +43,15 @@
             {% endif %}
         </ul>
         <hr>
+
+        <!-- Message block for confirmation or error messages -->
+        <!-- TO DO:  style error vs. confirmation messages -->
+        {% if message %}
+            <div class="message">
+                <p class="{{message_class}}}">{{ message }}</p>
+            </div>
+        {% endif %}
+
         {% block body %}
         {% endblock %}
     </body>

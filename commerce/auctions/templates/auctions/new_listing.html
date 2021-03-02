@@ -1,0 +1,17 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+    <h2>Create a New Listing</h2>
+
+    {% if user.is_authenticated %}
+    <form action="{% url 'listing_add' %}" method="post">
+        {% csrf_token %}
+        {{ listing_form }}
+        <input class="btn btn-primary" type="submit">
+    </form>
+    {% else %}
+        <p>You must <a href="{% url 'login' %}">log in</a> to create a listing.</p>
+    {% endif %}
+
+{% endblock %}

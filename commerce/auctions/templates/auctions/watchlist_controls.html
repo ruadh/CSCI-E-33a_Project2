@@ -2,14 +2,10 @@
 
 {% block watchlist_controls %}
 
-{% if watchlist_message %}
-    <p class="error">{{watchlist_message}}</p>
+{% if in_watchlist %}
+    <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
 {% else %}
-    {% if in_watchlist %}
-        <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
-    {% else %}
-        <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
-    {% endif %} 
-{% endif %}
+    <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
+{% endif %} 
 
 {% endblock %}

@@ -1,15 +1,7 @@
 {% extends 'auctions/layout.html' %}
 
 {% block body %}
-
-<!-- Status messages -->
-{% if message %}
-<!-- TO DO:  style error vs. confirmation messages -->
-    <div class="message">
-        <p class="error">{{ message }}</p>
-    </div>
-{% endif %}    
-
+  
 <!-- Listing Info -->
 <h2>{{listing.title}}</h2>
 <h4>${{listing.bid_price}}</h4>

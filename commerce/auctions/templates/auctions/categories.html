@@ -6,6 +6,8 @@
     {% for category in categories %}
     <li><a href="{% url 'category_listing' category.id %}">{{category}}</a></li>
     {% endfor %}
+    <!-- Uncategorized listings -->
+    <li><a href="{% url 'category_listing' 0 %}">Uncategorized</a></li>
 </ul>
 
 {% endblock %}

@@ -7,11 +7,17 @@ from .models import User, Listing, Category, Bid, Comment, WatchlistItem
 from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django import forms
-import datetime, decimal
+import datetime
+
+
+# SETTINGS
+
+# Default listing image courtesy of Videoplasty.com, CC BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0>, via Wikimedia Commons
+placeholder_image = 'https://upload.wikimedia.org/wikipedia/commons/5/53/Price_Tag_Flat_Icon_Vector.svg'
 
 
 # FORM CLASSES
-# Note:  the user and timestamp can be derived, so I'm not included them as form fields
+# Note:  the user and timestamp can be derived, so I'm not including them as form fields
 
 # Comment form
 
@@ -29,13 +35,19 @@ class BidForm(forms.Form):
     amount = forms.DecimalField(required=True, max_digits=9, decimal_places=2)
 
 
-# METHODS
+# New Listing Form
 
-def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
-    return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
+class ListingForm(forms.Form):
+    title = forms.CharField(max_length=128, required=True, strip=True)
+    description = forms.CharField(
+        required=True, strip=True, widget=forms.Textarea, label=None)
+    starting_price = forms.DecimalField(max_digits=9, decimal_places=2)
+    category = forms.ModelChoiceField(queryset=Category.objects.all())
+    image = forms.URLField(required=False)
 
 
 # AUTHENTICATION METHODS
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -96,6 +108,13 @@ def register(request):
 
 # LISTING METHODS
 
+# Display a list view of item listings
+# Default is all active listings, but may be called with different criteria by other methods
+
+def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
+    return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
+
+
 # Display the detail view of a listing
 
 def listing_view(request, listing_id, message=''):
@@ -122,8 +141,50 @@ def listing_view(request, listing_id, message=''):
     })
 
 
-# Close a listing:  ends the auction, making the highest bidder the winner
+# Load the listing form
+@login_required
+def listing_form(request, form=ListingForm(), message=None):
+    return render(request, 'auctions/new_listing.html', {
+            'listing_form': form,
+            'message': message
+        })
 
+
+# Create a new listing
+@login_required
+def listing_add(request):
+    form = ListingForm(request.POST)
+    # Validate form submission and gather values
+    if form.is_valid():
+        category = form.cleaned_data['category']
+        title = form.cleaned_data['title']
+        description = form.cleaned_data['description']
+        starting_price = form.cleaned_data['starting_price']
+        # Check for a positive starting price
+        if starting_price > 0:
+            # If no image was supplied, use the placeholder
+            if form.cleaned_data['image']:
+                image = form.cleaned_data['image']
+            else:
+                image = placeholder_image
+            # Re-check for required fields, and save and render the listing
+            if title and description and starting_price:
+                listing = Listing(category=category, owner=request.user,  title=title, description=description,
+                                starting_price=starting_price, image=image, )
+                listing.save()
+                return listing_view(request, listing.id)
+            else:
+                return render(request, 'auctions/new_listing.html', {
+                    'listing_form': form
+                })
+        else:
+            return listing_form(request, form, 'Starting bid must be greater than $0')
+    else:
+        return HttpResponse('invalid form')
+
+
+# Close a listing:  ends the auction, making the highest bidder the winner
+@login_required
 def close_listing(request, listing_id):
     # Mark the listing as closed
     listing = Listing.objects.get(pk=listing_id)
@@ -146,7 +207,7 @@ def watchlist_add(request, listing_id):
             pk=listing_id), watcher=request.user)
         item.save()
         # Re-render the page with the new information
-        return listing_view(request, listing_id)        
+        return listing_view(request, listing_id)
     except:
         # If the item is already on the list, just show that status - the user doesn't need an error
         if WatchlistItem.objects.filter(listing=Listing.objects.get(pk=listing_id), watcher=request.user):
@@ -157,7 +218,7 @@ def watchlist_add(request, listing_id):
             message = 'An error occurred while attempting to add this item to your watchlist'
             in_watchlist = False
         # Re-render the page with the new information
-        return listing_view(request, listing_id)  
+        return listing_view(request, listing_id)
 
 
 # Remove an item from the user's watch list
@@ -169,11 +230,11 @@ def watchlist_remove(request, listing_id):
             listing=Listing.objects.get(pk=listing_id), watcher=request.user)
         item.delete()
         # Re-render the page with the new information
-        return listing_view(request, listing_id)  
+        return listing_view(request, listing_id)
     except:
         # If the item doesn't exist or cannot be deleted, return an error to the user
         message = 'An error occurred while attempting to remove this item from your watch list'
-        return listing_view(request, listing_id, message)  
+        return listing_view(request, listing_id, message)
 
 
 # View the user's watch list
@@ -183,7 +244,6 @@ def watchlist_view(request):
     return render(request, 'auctions/watchlist.html', {
         'watchlist_items': WatchlistItem.objects.filter(watcher=request.user).order_by('-id')
     })
-
 
 
 # CATEGORY METHODS
@@ -198,8 +258,12 @@ def category_index(request):
 
 # View a list of all listings for a given category
 def category_listing(request, category_id):
-    category_name = Category.objects.get(pk=category_id).name
-    listings = Listing.objects.filter(category=category_id, is_active=True)
+    if category_id == 0:
+        category_name = 'Uncategorized'
+        listings = Listing.objects.filter(category=None, is_active=True)
+    else:
+        category_name = Category.objects.get(pk=category_id).name
+        listings = Listing.objects.filter(category=category_id, is_active=True)
     return index(request, listings, category_name)
 
 
@@ -216,7 +280,8 @@ def comment_add(request):
             listing_id = form.cleaned_data['listing']
             listing = Listing.objects.get(pk=listing_id)
             body = form.cleaned_data['body']
-            comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(), listing=listing, body=body)
+            comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
+            ), listing=listing, body=body)
             comment.save()
             return listing_view(request, listing_id)
         else:
@@ -236,7 +301,7 @@ def bid_add(request):
             listing = Listing.objects.get(pk=form.cleaned_data['listing'])
             amount = form.cleaned_data['amount']
             # Validate that the bid is higher than the current price
-            if amount <= listing.bid_price:  
+            if amount <= listing.bid_price:
                 message = 'Your bid must be higher than the current price.'
             # Don't allow the user to bid on their own items  (UI should prevent this, but just to be safe)
             elif listing.owner == request.user:
@@ -247,7 +312,8 @@ def bid_add(request):
                 message = 'Sorry, this auction has ended.'
             # If all validation passes, save the bid
             else:
-                bid = Bid(bidder=request.user, listing=listing, amount=amount, timestamp=datetime.datetime.now())
+                bid = Bid(bidder=request.user, listing=listing,
+                          amount=amount, timestamp=datetime.datetime.now())
                 bid.save()
                 message = 'Thank you for your bid'
         else:

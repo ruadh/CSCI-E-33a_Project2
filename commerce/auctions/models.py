@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Max
+from django.core.validators import MinValueValidator
+import decimal
 
 class User(AbstractUser):
 
@@ -23,7 +25,7 @@ class Listing(models.Model):
         Category, on_delete=models.SET_NULL, related_name='listings', null=True, blank=True)
     title = models.CharField(max_length=150)
     description = models.TextField(max_length=2000)
-    starting_price = models.DecimalField(max_digits=9, decimal_places=2)
+    starting_price = models.DecimalField(max_digits=9, decimal_places=2, validators=[ MinValueValidator(decimal.Decimal('0.01')) ])
     is_active = models.BooleanField(default=True)
     image = models.URLField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)

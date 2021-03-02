@@ -125,3 +125,4 @@ STATIC_URL = '/static/'
 # Login URL added 3/1/2021 Jess Reed to support @login_required decorator
 
 LOGIN_URL = '/login'
+

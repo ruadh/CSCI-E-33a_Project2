@@ -126,3 +126,4 @@ STATIC_URL = '/static/'
 
 LOGIN_URL = '/login'
 
+USE_THOUSAND_SEPARATOR = True

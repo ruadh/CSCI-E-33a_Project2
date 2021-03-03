@@ -134,7 +134,7 @@ def listing_view(request, listing_id, message=''):
     # Load a blank comment form and list any existing comments
     comment_form = CommentForm(initial={'listing': listing_id})
     comments = Comment.objects.filter(
-        listing=listing_id).order_by('-timestamp')
+        listing=listing_id).order_by('timestamp')
     # Determine whether this listing is in the user's watchlist
     if request.user.is_authenticated and WatchlistItem.objects.filter(listing=listing_id, watcher=request.user):
         in_watchlist = True

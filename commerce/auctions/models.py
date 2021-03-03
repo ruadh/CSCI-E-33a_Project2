@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Max
-from django.core.validators import MinValueValidator
+# from django.core.validators import MinValueValidator
 import decimal
 
 class User(AbstractUser):
@@ -69,7 +69,7 @@ class Bid(models.Model):
         Listing, on_delete=models.CASCADE, related_name='bids')
     bidder = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bids')
-    amount = models.DecimalField(max_digits=9, decimal_places=2)
+    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Your Bid')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -81,7 +81,7 @@ class Comment(models.Model):
         Listing, on_delete=models.CASCADE, related_name='comments')
     commenter = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='comments')
-    body = models.TextField(max_length=300, blank=False, null=False)
+    body = models.TextField(max_length=500, blank=False, null=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

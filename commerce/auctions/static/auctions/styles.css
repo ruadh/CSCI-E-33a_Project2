@@ -4,12 +4,12 @@ body {
     margin-right: 50px;
 }
 
-footer {
-    font-style: italic;
+h3, h4 {
+    margin-top: 2rem;
 }
 
-h4 {
-    margin-top: 2rem;
+a {
+    padding-bottom: 1rem;
 }
 
 input,
@@ -18,13 +18,17 @@ textarea {
     margin-bottom: 1rem;
 }
 
+textarea[name="body"]{
+    width: 100%;
+    height: 10rem;
+    padding: 5px;
+}
+
 .link-as-button {
     width: max-content;
 }
 
 .listing {
-    /* background-color: whitesmoke; */
-    border: solid lightgray 1px;
     padding: 1rem;
     margin-top: 1rem;
     display: flex;
@@ -32,7 +36,7 @@ textarea {
 }
 
 .listing div {
-    padding-left: 2rem;
+    padding-left: 3rem;
     display: flex;
     flex-direction: column;
 }
@@ -45,10 +49,6 @@ textarea {
 .detail-image {
     height: 50vh;
     padding-bottom: 2rem;
-}
-
-.label {
-    font-weight: bold;
 }
 
 .message {
@@ -73,12 +73,37 @@ blockquote {
     margin-top: 1rem;
 }
 
+label,
+.label {
+    font-weight: bold;
+}
+
 form label,
 form input[type="submit"] {
     display: block;
 }
 
+.label,
+.bid-form label {
+    display: inline;
+    padding-right: 1rem;
+}
 
+/* Hiding form labels visually but not from screen readers for accessibility:  https://www.w3.org/WAI/tutorials/forms/labels/ */
+.comment-form label {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+.nav {
+    margin-top: 0.3rem;
+}
 
 /* TEMP FOR TESTING */
 .dev {

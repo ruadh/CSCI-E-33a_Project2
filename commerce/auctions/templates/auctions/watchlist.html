@@ -4,7 +4,7 @@
 <h2>Your Watchlist</h2>
 {% for watchlist_item in watchlist_items %}
 <div class="listing">
-    <img src="{{watchlist_item.listing.image}}" class="thumbnail-image">
+    <img src="{{watchlist_item.listing.image_url}}" class="thumbnail-image">
     <div>
         <h3>{{watchlist_item.listing.title}}</h3>
         {% if watchlist_item.listing.is_active %}
@@ -15,7 +15,7 @@
         <p><span class="label">Price:</span> ${{watchlist_item.listing.bid_price}}</p>
         <p>{{watchlist_item.listing.description}}</p>
         <p><span class="label">Listed:</span> {{watchlist_item.listing.timestamp}}</p>
-        <a href="{% url 'listing' watchlist_item.listing.id %}">View Listing</a>
+        <a href="{% url 'listing' watchlist_item.listing.id %}" class="btn btn-primary link-as-button">View Listing</a>
     </div>
 </div>
 {% endfor %}

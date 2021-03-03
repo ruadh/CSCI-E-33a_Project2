@@ -3,9 +3,9 @@
 {% block watchlist_controls %}
 
 {% if in_watchlist %}
-    <a href="{% url 'watchlist_remove' listing_id %}" class="btn btn-primary link-as-button">Remove from watch list</a>
+    <a href="{% url 'watchlist_remove' listing_id %}">Remove from watch list</a>
 {% else %}
-    <a href="{% url 'watchlist_add' listing_id %}" class="btn btn-primary link-as-button">Add to watch list</a>  
+    <a href="{% url 'watchlist_add' listing_id %}">Add to watch list</a>  
 {% endif %} 
 
 {% endblock %}

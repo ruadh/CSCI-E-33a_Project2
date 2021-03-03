@@ -6,14 +6,13 @@
 <div class="listing">
     <img src="{{listing.image_url}}" alt="product image" class="detail-image">
     <div>
-        <!-- Listing details: -->
+        <div>
         <h2>{{listing.title}}</h2> 
-        <!-- Add/remove from watchlist -->
+        <!-- Listing details: -->
         {% include 'auctions/watchlist_controls.html' %}
         <p><span class="label">Category:</span> {{listing.category}}</p>
         <p><span class="label">Listed by:</span> {{listing.owner}} on {{listing.timestamp}}</p>
         <p><span class="label">Description: </span>{{listing.description}}</p>
-
 
         <!-- Show the owner's or bidder's controls, depending on the user-->
         {% if user == listing.owner %}
@@ -40,6 +39,7 @@
     {% else %}
         <p>You must <a href="{% url 'login' %}">log in</a> to post comments.</p>
     {% endif %}
+    </div>
 </div>
 
 

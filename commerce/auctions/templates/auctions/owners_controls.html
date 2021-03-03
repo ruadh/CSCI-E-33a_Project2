@@ -1,0 +1,24 @@
+<!-- Reusable block that we can use in multiple locations using 'include': https://bit.ly/3b6Ocbc -->
+
+{% block owners_controls %}
+
+    <h4>Manage Auction</h4>
+    <!-- Close or cancel an open auction -->
+    {% if listing.is_active %}
+        <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
+        {% if listing.starting_price == listing.bid_price %}
+            <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Cancel auction</a>
+        {% else %}
+            <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Accept bid and close auction</a>
+        {% endif %}
+    <!-- Show the winner, if any, of a closed auction -->
+    {% else %}
+        <p><span class="label">Final price: </span>${{listing.bid_price}}</p>
+        {% if listing.starting_price == listing.bid_price %}
+            <p>Auction canceled. There is no winner.</p>
+        {% else %}
+            <p><span class="label">Winner:</span> {{listing.winner}}</p>
+        {% endif %}
+    {% endif %}
+  
+{% endblock %}

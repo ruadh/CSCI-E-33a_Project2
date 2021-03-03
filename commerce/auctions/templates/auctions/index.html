@@ -8,9 +8,8 @@
         <img src="{{listing.image_url}}" alt="product image" class="thumbnail-image">
         <div>
             <h3>{{listing.title}}</h3>
-            <p><span class="label">Price:</span> ${{listing.bid_price}} </p>
+            <p><span class="label">Current price:</span> ${{listing.bid_price}} </p>
             <p>{{listing.description}}</p>
-            <p><span class="label">Listed:</span> {{listing.timestamp}}</p>
             <a href="{% url 'listing' listing.id %}" class="btn btn-primary link-as-button">View Listing</a>
         </div>
     </div>

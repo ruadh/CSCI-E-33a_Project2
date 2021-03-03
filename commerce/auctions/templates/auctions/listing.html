@@ -17,13 +17,13 @@
 
         <!-- Show the owner's or bidder's controls, depending on the user-->
         {% if user == listing.owner %}
-        {% include 'auctions/owners_controls.html' %}
+            {% include 'auctions/owners_controls.html' %}
         {% else %}
-        {% include 'auctions/bidding_controls.html' %}
+            {% include 'auctions/bidding_controls.html' %}
         {% endif %}
 
         <!-- Comments block -->
-        <h3>Comments</h3>
+        <h3 id="comments">Comments</h3>
         {% for comment in comments %}
         <blockquote>
         <p class="comment-body">{{comment.body}}</p>
@@ -38,7 +38,9 @@
             <input type="submit" class="btn btn-primary link-as-button">
         </form>
     {% else %}
-        <p>You must <a href="{% url 'login' %}">log in</a> to post comments.</p>
+        <!-- Since we can't call login_view with @login_required, we have to pass the next param in the URL -->
+        <!-- CITATION:  Encoding the "#" for the page anchor from https://drupal.stackexchange.com/a/192902 -->
+        <p>You must <a href="{% url 'login' %}?next=listing/{{listing_id}}%23comments">log in</a> to post comments.</p>
     {% endif %}
 </div>
 

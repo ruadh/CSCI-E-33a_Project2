@@ -132,6 +132,12 @@ def index(request, listings=Listing.objects.filter(is_active=True), title='Activ
     return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
 
+# Display all inactive listings
+
+def listings_closed(request):
+    return index(request, Listing.objects.filter(is_active=False), 'Closed Listings')
+
+
 # Display the detail view of a listing
 
 def listing_view(request, listing_id, message=None, message_class=None):
@@ -192,7 +198,7 @@ def listing_add(request):
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
                 listing = Listing(category=category, owner=request.user,  title=title, description=description,
-                                  starting_price=starting_price, image=image_url, )
+                                  starting_price=starting_price, image_url=image_url, )
                 listing.save()
                 return listing_view(request, listing.id)
             else:

@@ -12,10 +12,14 @@ a {
     padding-bottom: 1rem;
 }
 
+/* Borrowing styling from Boostrap class "form-control" */
 input,
 select,
 textarea {
     margin-bottom: 1rem;
+    border-radius: .25rem;
+    border: 1px solid #ced4da;
+    padding: .375rem .75rem;
 }
 
 textarea[name="body"]{
@@ -55,11 +59,24 @@ textarea[name="body"]{
     background-color: whitesmoke;
     padding: 1rem;
     margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-radius: .25rem;
 }
 
 .error {
-    color: red;
+    background-color: mistyrose;
     font-style: italic;
+}
+
+/* Error icon courtesy of Wikimedia Commons user Iniquity https://commons.wikimedia.org/wiki/File:OOjs_UI_icon_error-destructive.svg */
+.error:before {
+    content: "";
+    display: block;
+    background: url("https://upload.wikimedia.org/wikipedia/commons/4/4e/OOjs_UI_icon_error-destructive.svg") no-repeat;
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin: 0 6px 0 0;
 }
 
 .comment-body {

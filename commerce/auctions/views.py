@@ -28,7 +28,9 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ['body', 'listing']
         widgets = {
-            'listing': forms.HiddenInput
+            'listing': forms.HiddenInput,
+            'body': forms.Textarea(
+                attrs={'placeholder': 'Enter your comment here'}),
         }
 
 
@@ -39,7 +41,7 @@ class BidForm(forms.ModelForm):
         model = Bid
         fields = ['listing', 'amount']
         widgets = {
-            'listing': forms.HiddenInput
+            'listing': forms.HiddenInput,
         }
 
 
@@ -75,7 +77,8 @@ def login_view(request):
                 return HttpResponseRedirect(reverse('index'))
         else:
             return render(request, 'auctions/login.html', {
-                'message': 'Invalid username and/or password.'
+                'message': 'Invalid username and/or password.',
+                'message_class': 'error'
             })
     else:
         return render(request, 'auctions/login.html')
@@ -100,7 +103,8 @@ def register(request):
         confirmation = request.POST['confirmation']
         if password != confirmation:
             return render(request, 'auctions/register.html', {
-                'message': 'Passwords must match.'
+                'message': 'Passwords must match.',
+                'message_class': 'error'
             })
 
         # Attempt to create new user
@@ -109,7 +113,8 @@ def register(request):
             user.save()
         except IntegrityError:
             return render(request, 'auctions/register.html', {
-                'message': 'Username already taken.'
+                'message': 'Username already taken.',
+                'message_class': 'error'
             })
         login(request, user)
         return HttpResponseRedirect(reverse('index'))
@@ -129,7 +134,7 @@ def index(request, listings=Listing.objects.filter(is_active=True), title='Activ
 
 # Display the detail view of a listing
 
-def listing_view(request, listing_id, message=''):
+def listing_view(request, listing_id, message=None, message_class=None):
     listing = Listing.objects.get(pk=listing_id)
     # Load a blank comment form and list any existing comments
     comment_form = CommentForm(initial={'listing': listing_id})
@@ -150,17 +155,19 @@ def listing_view(request, listing_id, message=''):
         'comments': comments,
         'comment_form': comment_form,
         'bid_form': bid_form,
-        'message': message
+        'message': message,
+        'message_class': message_class
     })
 
 
 # Load the new listing form
 
 @login_required
-def listing_form(request, form=ListingForm(), message=None):
+def listing_form(request, form=ListingForm(), message=None, message_class=None):
     return render(request, 'auctions/new_listing.html', {
         'listing_form': form,
-        'message': message
+        'message': message,
+        'message_class': message_class
     })
 
 
@@ -193,9 +200,9 @@ def listing_add(request):
                     'listing_form': form
                 })
         else:
-            return listing_form(request, form, 'Starting bid must be greater than $0')
+            return listing_form(request, form, 'Starting bid must be greater than $0', 'error')
     else:
-        return listing_form(request, form, 'An error occurred while processing your submission.  Your listing has NOT been saved.')
+        return listing_form(request, form, 'An error occurred while processing your submission.  Your listing has NOT been saved.', 'error')
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner
@@ -234,7 +241,7 @@ def watchlist_add(request, listing_id):
             message = 'An error occurred while attempting to add this item to your watchlist'
             in_watchlist = False
         # Re-render the page with the new information
-        return listing_view(request, listing_id)
+        return listing_view(request, listing_id, message, 'error')
 
 
 # Remove an item from the user's watch list
@@ -250,7 +257,7 @@ def watchlist_remove(request, listing_id):
     except:
         # If the item doesn't exist or cannot be deleted, return an error to the user
         message = 'An error occurred while attempting to remove this item from your watch list'
-        return listing_view(request, listing_id, message)
+        return listing_view(request, listing_id, message, 'error')
 
 
 # View the user's watch list
@@ -305,11 +312,14 @@ def comment_add(request):
                 # Save the comment to the database and re-render the page
                 comment.save()
                 message = 'Thank you for your comment.'
+                message_class = None
             else:
                 message = 'Your comment cannot be blank.'
+                message_class = 'error'
         else:
             message = 'An error occurred while processing your submission.  Your comment has NOT been saved.'
-        return listing_view(request, listing.id, message)
+            message_class = 'error'
+        return listing_view(request, listing.id, message, message_class)
 
 
 # BIDDING METHODS
@@ -320,6 +330,8 @@ def comment_add(request):
 def bid_add(request):
     if request.method == "POST":
         form = BidForm(request.POST)
+        # Initial assumption is error; we'll unset this if the bid passes validation
+        message_class = 'error'
         if form.is_valid():
             # Gather the bid details
             listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
@@ -340,11 +352,12 @@ def bid_add(request):
                           amount=amount, timestamp=datetime.datetime.now())
                 bid.save()
                 message = 'Thank you for your bid'
+                message_class = None
         else:
             message = 'An unexpected error occurred.  Your bid has NOT been saved.'
 
         # Regardless of the outcome, Re-render the page with the current details and any messages
-        return listing_view(request, listing.id, message)
+        return listing_view(request, listing.id, message, message_class)
 
 
 # TEMP FOR TESTING

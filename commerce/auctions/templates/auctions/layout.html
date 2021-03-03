@@ -16,6 +16,7 @@
                 Not signed in.
             {% endif %}
         </div>
+
         <ul class="nav">
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'index' %}">Active Listings</a>
@@ -47,8 +48,8 @@
         <!-- Message block for confirmation or error messages -->
         <!-- TO DO:  style error vs. confirmation messages -->
         {% if message %}
-            <div class="message">
-                <p class="{{message_class}}}">{{ message }}</p>
+            <div class="message {{message_class}}">
+                {{ message }}
             </div>
         {% endif %}
 

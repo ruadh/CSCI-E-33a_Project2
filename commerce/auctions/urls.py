@@ -20,6 +20,4 @@ urlpatterns = [
     path("categories", views.category_index, name="category_index"),
     path("category/<int:category_id>", views.category_listing, name="category_listing"),
 
-    # FOR DEV ONLY
-    path("dev", views.dev, name="dev"),
 ]

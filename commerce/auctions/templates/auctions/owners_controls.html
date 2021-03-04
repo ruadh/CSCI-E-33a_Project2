@@ -4,6 +4,7 @@
 
     <h3>Manage Auction</h3>
     <p><span class="label">Number of bids: </span>{{listing.bid_count}}</p>
+    <p><span class="label">Starting price: </span>${{listing.starting_price}}</p>
     <!-- Close or cancel an open auction -->
     {% if listing.is_active %}
         <p><span class="label">Current price: </span>${{listing.bid_price}}</p>

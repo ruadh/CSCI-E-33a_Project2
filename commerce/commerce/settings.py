@@ -127,3 +127,11 @@ STATIC_URL = '/static/'
 LOGIN_URL = '/login'
 
 USE_THOUSAND_SEPARATOR = True
+
+
+# Jessica's default settings
+
+DEFAULT_TIMEZONE = 'America/New_York'
+
+# Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
+PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'

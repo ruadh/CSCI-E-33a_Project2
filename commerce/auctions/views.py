@@ -9,13 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django import forms
 from django.utils import timezone
 import datetime, pytz
-
-
-# SETTINGS
-
-# Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
-PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'
-DEFAULT_TIMEZONE = 'America/New_York'
+from django.conf import settings
 
 
 # FORM CLASSES
@@ -127,7 +121,8 @@ def register(request):
     else:
         timezones = pytz.all_timezones
         return render(request, 'auctions/register.html', {
-            'timezones': timezones
+            'timezones': timezones,
+            'default_timezone': settings.DEFAULT_TIMEZONE
         })
 
 
@@ -139,7 +134,7 @@ def register(request):
 def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
     # If the user isn't authenticated, set the display timezone to the site's default
     if not request.user.is_authenticated:
-        timezone.activate(DEFAULT_TIMEZONE)
+        timezone.activate(settings.DEFAULT_TIMEZONE)
     return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
 
@@ -215,7 +210,7 @@ def listing_add(request):
             if form.cleaned_data['image_url']:
                 image_url = form.cleaned_data['image_url']
             else:
-                image_url = PLACEHOLDER_IMAGE
+                image_url = settings.PLACEHOLDER_IMAGE
 
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
@@ -379,10 +374,3 @@ def bid_add(request):
 
         # Regardless of the outcome, Re-render the page with the current details and any messages
         return listing_view(request, listing.id, message, message_class)
-
-# DEV ONLY
-def dev(request):
-    param = timezones
-    return HttpResponse(param)
-
-

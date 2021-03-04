@@ -5,11 +5,8 @@
     <!-- If the listing is active, show the bid form  -->
     {% if listing.is_active %}
     <h3 id="bid">Bid Now</h3>
-        {% if listing.bid_count == 0 %}
             <p><span class="label">Starting price: </span>${{listing.starting_price}}</p>
-        {% else %}
             <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
-        {% endif %}
         {% if user.is_authenticated %}
             <form action="{% url 'bid_add' %}" method="POST" class="bid-form">
                 {% csrf_token %}
@@ -24,6 +21,7 @@
     <!-- If the listing is inactive, show an "auction closed" message -->
     {% else %}
         <h3 id="bid">Auction closed</h3>
+        <p><span class="label">Starting price: </span>${{listing.starting_price}}</p>
         <p><span class="label">Final price: </span>${{listing.bid_price}}</p>
         {% if listing.winner == request.user  %}
             <p>Congratulations! You won this item.</p>

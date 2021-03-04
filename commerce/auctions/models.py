@@ -1,14 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Max
-# from django.core.validators import MinValueValidator
 import decimal, pytz
+from django.conf import settings
 
 class User(AbstractUser):
     # Timezones list approach from:  https://stackoverflow.com/a/45867250
     timezones = tuple(zip(pytz.all_timezones, pytz.all_timezones))
     timezone = models.CharField(max_length=32, choices=timezones, 
-    default='America/New_York')
+    default = settings.DEFAULT_TIMEZONE)
 
     def __str__(self):
         return f'{self.username}'

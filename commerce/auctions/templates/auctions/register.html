@@ -23,7 +23,7 @@
             <label for="tz-select">Select Your Timezone:</label>
             <select name="user_timezone" id="tz-select" class="form-control">
                 {% for timezone in timezones %}
-                    {% if timezone == 'America/New_York' %}
+                    {% if timezone == default_timezone %}
                         <option value="{{timezone}}" selected="selected">{{timezone}}</option>
                     {% else %}
                         <option value="{{timezone}}">{{timezone}}</option>

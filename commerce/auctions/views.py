@@ -345,8 +345,10 @@ def bid_add(request):
             # Gather the bid details
             listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
             amount = form.cleaned_data['amount']
-            # Validate that the bid is higher than the current price
-            if amount <= listing.bid_price:
+            # If there are any
+            if listing.bid_count == 0 and amount < listing.starting_price:
+                message = 'Your bid must meet or exceed the starting price.'
+            elif listing.bid_count > 0 and amount <= listing.bid_price:
                 message = 'Your bid must be higher than the current price.'
             # Don't allow the user to bid on their own items  (UI should prevent this, but just to be safe)
             elif listing.owner == request.user:

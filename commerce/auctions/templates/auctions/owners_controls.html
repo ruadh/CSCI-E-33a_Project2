@@ -2,11 +2,12 @@
 
 {% block owners_controls %}
 
-    <h4>Manage Auction</h4>
+    <h3>Manage Auction</h3>
+    <p><span class="label">Number of bids: </span>{{listing.bid_count}}</p>
     <!-- Close or cancel an open auction -->
     {% if listing.is_active %}
         <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
-        {% if listing.starting_price == listing.bid_price %}
+        {% if listing.bid_count == 0 %}
             <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Cancel auction</a>
         {% else %}
             <a href="{% url 'close_listing' listing_id %}" class="btn btn-primary link-as-button">Accept bid and close auction</a>

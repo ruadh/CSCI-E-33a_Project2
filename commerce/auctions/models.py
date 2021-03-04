@@ -45,10 +45,14 @@ class Listing(models.Model):
     # CITATION:  @property decorator approach based on:  https://stackoverflow.com/a/17682694
 
     @property
+    def bid_count(self):
+        return Bid.objects.filter(listing=self.id).count()
+
+
+    @property
     def bid_price(self):
         try:
             bids = Bid.objects.filter(listing=self.id)
-            # TO DO:  error capture
             if bids.count() > 0:
                 max_bid = Bid.objects.filter(listing=self.id).aggregate(Max('amount'))
                 return round(max_bid['amount__max'], 2)
@@ -74,7 +78,7 @@ class Bid(models.Model):
         Listing, on_delete=models.CASCADE, related_name='bids')
     bidder = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bids')
-    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Your Bid')
+    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Your bid')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

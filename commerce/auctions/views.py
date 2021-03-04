@@ -143,21 +143,25 @@ def listings_closed(request):
 
 def listing_view(request, listing_id, message=None, message_class=None):
     listing = Listing.objects.get(pk=listing_id)
+
     # Load a blank comment form and list any existing comments
     comment_form = CommentForm(initial={'listing': listing_id})
     comments = Comment.objects.filter(
         listing=listing_id).order_by('timestamp')
+
     # Determine whether this listing is in the user's watchlist
-    # Style note:  we could do this on one line, but it would be hard to read
     if request.user.is_authenticated:
         user = User.objects.get(pk=request.user.id)
         watchlist_items = user.watchlist_items.all()
         in_watchlist = listing in watchlist_items
     else:
         in_watchlist = False
+
     # Load a blank bid form with the current price
     bid_form = BidForm(initial={'listing': listing_id})
     bid_form = BidForm(initial={'listing': listing})
+
+    # Render the listing detail page
     return render(request, 'auctions/listing.html', {
         'listing_id': listing_id,
         'listing': listing,
@@ -185,20 +189,24 @@ def listing_form(request, form=ListingForm(), message=None, message_class=None):
 
 @login_required
 def listing_add(request):
-    form = ListingForm(request.POST)
+
     # Validate form submission and gather values
+    form = ListingForm(request.POST)
     if form.is_valid():
         category = form.cleaned_data['category']
         title = form.cleaned_data['title']
         description = form.cleaned_data['description']
         starting_price = form.cleaned_data['starting_price']
+
         # Check that the starting price is valid
+        # TO DO: reorder this so it's more readable
         if starting_price > 0:
             # If no image was supplied, use the placeholder
             if form.cleaned_data['image_url']:
                 image_url = form.cleaned_data['image_url']
             else:
                 image_url = placeholder_image
+
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
                 listing = Listing(category=category, owner=request.user,  title=title, description=description,
@@ -249,7 +257,7 @@ def watchlist_add(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
         listing.watchlist_items.add(request.user)
-        return listing_view(request, listing_id, message='This item has been added to your wishlist')
+        return listing_view(request, listing_id, message='This item has been added to your watchlist')
     except:
         message = 'An error occurred while attempting to add this item to your watchlist'
         in_watchlist = False
@@ -263,7 +271,7 @@ def watchlist_remove(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
         listing.watchlist_items.remove(request.user)
-        return listing_view(request, listing_id, message='This item has been removed from your wishlist')
+        return listing_view(request, listing_id, message='This item has been removed from your watchlist')
     except:
         # If the item doesn't exist or cannot be deleted, return an error to the user
         message = 'An error occurred while attempting to remove this item from your watch list'
@@ -298,13 +306,14 @@ def category_listing(request, category_id):
 
 @login_required
 def comment_add(request):
+
     # Validate and save the comment form
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
-            # Gather the form fields into comment object
             listing = form.cleaned_data['listing']
             body = form.cleaned_data['body']
+
             # Non-empty body validation is performed on the model level, but let's double-check
             if body:
                 comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
@@ -358,12 +367,3 @@ def bid_add(request):
 
         # Regardless of the outcome, Re-render the page with the current details and any messages
         return listing_view(request, listing.id, message, message_class)
-
-
-# TEMP FOR TESTING
-def dev(request, param='default parameter'):
-    timezone.activate('America/New_York')
-    param = timezone.get_current_timezone_name()
-    return render(request, 'auctions/dev.html', {
-        'param': param,
-    })

@@ -5,7 +5,7 @@ body {
 }
 
 h3, h4 {
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 a {
@@ -36,18 +36,20 @@ textarea[name="body"]{
     padding: 1rem;
     margin-top: 1rem;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    align-items: center;
+    border: solid 1px lightgray;
 }
 
 .listing div {
-    padding-left: 3rem;
     display: flex;
     flex-direction: column;
 }
 
 .thumbnail-image {
-    width: 25vw;
-    /* height: auto; */
+    width: 80%;
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .detail-image {
@@ -84,7 +86,6 @@ textarea[name="body"]{
 }
 
 blockquote {
-    /* border: solid lightgray 1px; */
     background-color: whitesmoke;
     padding: 1rem;
     margin-top: 1rem;
@@ -122,14 +123,30 @@ form input[type="submit"] {
     margin-top: 0.3rem;
 }
 
-/* TEMP FOR TESTING */
-.dev {
-    color: green;
-}
 
+/* Larger screens:  Support two-column layouts */
 
-/* @media(min-width: 1200px) {
+@media(min-width: 720px) {
+
+    h3, h4 {
+        margin-top: 2rem;
+    }
+
+    .listing {
+        flex-direction: row;
+        border: none;
+        align-items: flex-start;
+    }
+
+    .listing div {
+        padding-left: 3rem;
+    }
+
+    .thumbnail-image {
+        width: 25vw;
+    }
+
     blockquote {
         max-width: 75vw;
     }
-} */
+}

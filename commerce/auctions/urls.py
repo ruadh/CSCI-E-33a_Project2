@@ -19,7 +19,4 @@ urlpatterns = [
     path("bid_add", views.bid_add, name="bid_add"),
     path("categories", views.category_index, name="category_index"),
     path("category/<int:category_id>", views.category_listing, name="category_listing"),
-
-    # TEMP FOR TESTING
-    path('dev', views.dev, name="dev")
 ]

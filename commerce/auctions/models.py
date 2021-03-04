@@ -25,6 +25,7 @@ class Listing(models.Model):
         User, on_delete=models.CASCADE, related_name='listings')
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, related_name='listings', null=True, blank=True)
+    watchlist_items = models.ManyToManyField(User, blank=True, related_name='watchlist_items')
     title = models.CharField(max_length=150)
     description = models.TextField(max_length=2000)
     starting_price = models.DecimalField(max_digits=9, decimal_places=2)
@@ -32,10 +33,14 @@ class Listing(models.Model):
     image_url = models.URLField(null=True, blank=True, verbose_name='Image URL')
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    # Default sorting:  most recent listings first
+    class Meta:
+        ordering = ['-timestamp']
+
     def __str__(self):
         return f'{self.owner.username}\'s {self.title}'
 
-    
+
     # Calculated current bid price
     # CITATION:  @property decorator approach based on:  https://stackoverflow.com/a/17682694
 
@@ -86,20 +91,3 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'{self.timestamp.strftime("%x %X")} - {self.commenter.username} on {self.listing.title}'
-
-
-class WatchlistItem(models.Model):
-    listing = models.ForeignKey(
-        Listing, on_delete=models.CASCADE, related_name='watchlist_items')
-    watcher = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='watchlist_items')
-
-    class Meta:
-        # Don't let a user add duplicate items to their wishlist
-        # CITATION:  I learned about unique_together from https://stackoverflow.com/a/2201687 but its documentation pointed me to UniqueConstraint instead
-        constraints = [models.UniqueConstraint(
-            fields=['listing', 'watcher'], name='unique watchlist entry')]
-        verbose_name_plural = "Watchlist Items"
-
-    def __str__(self):
-        return f'{self.listing}'

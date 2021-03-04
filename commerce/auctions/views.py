@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from .models import User, Listing, Category, Bid, Comment, WatchlistItem
+from .models import User, Listing, Category, Bid, Comment
 from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django import forms
@@ -128,6 +128,7 @@ def register(request):
 # NOTE: Default is all active listings, but may be called with different criteria by other methods
 
 def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
+    # I'm calling this here because it's the first page a non-logged-in user will see
     timezone.activate(default_timezone)
     return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
@@ -147,12 +148,15 @@ def listing_view(request, listing_id, message=None, message_class=None):
     comments = Comment.objects.filter(
         listing=listing_id).order_by('timestamp')
     # Determine whether this listing is in the user's watchlist
-    if request.user.is_authenticated and WatchlistItem.objects.filter(listing=listing_id, watcher=request.user):
-        in_watchlist = True
+    # Style note:  we could do this on one line, but it would be hard to read
+    if request.user.is_authenticated:
+        user = User.objects.get(pk=request.user.id)
+        watchlist_items = user.watchlist_items.all()
+        in_watchlist = listing in watchlist_items
     else:
         in_watchlist = False
     # Load a blank bid form with the current price
-    # bid_form = BidForm(initial={'listing': listing_id})
+    bid_form = BidForm(initial={'listing': listing_id})
     bid_form = BidForm(initial={'listing': listing})
     return render(request, 'auctions/listing.html', {
         'listing_id': listing_id,
@@ -225,55 +229,45 @@ def close_listing(request, listing_id):
 
 # WATCHLIST METHODS
 
-# Add an item to the user's watchlist
+# Display the user's watchlist
+
+@login_required
+def watchlist_view(request):
+    # Gather the current user's watchlist
+    user = User.objects.get(pk=request.user.id)
+    watchlist_items = user.watchlist_items.all()
+    return index(request, watchlist_items, 'My Watchlist')
+
+
+# Add a listing to the user's watchlist
+
 # NOTE:  I chose to allow users to include their own listings and closed listings on their watch lists,
 #           since users may need to track them, and the spec includes no features for doing that
 
 @login_required
 def watchlist_add(request, listing_id):
     try:
-        item = WatchlistItem(listing=Listing.objects.get(
-            pk=listing_id), watcher=request.user)
-        item.save()
-        # Re-render the page with the new information
-        return listing_view(request, listing_id)
+        listing = Listing.objects.get(pk=listing_id)
+        listing.watchlist_items.add(request.user)
+        return listing_view(request, listing_id, message='This item has been added to your wishlist')
     except:
-        # If the item is already on the list, just show that status - the user doesn't need an error
-        if WatchlistItem.objects.filter(listing=Listing.objects.get(pk=listing_id), watcher=request.user):
-            message = None
-            in_watchlist = True
-        # If the item can't be added for another reason, show the user an error
-        else:
-            message = 'An error occurred while attempting to add this item to your watchlist'
-            in_watchlist = False
-        # Re-render the page with the new information
+        message = 'An error occurred while attempting to add this item to your watchlist'
+        in_watchlist = False
         return listing_view(request, listing_id, message, 'error')
 
 
-# Remove an item from the user's watch list
+# Remove a listing from the user's watchlist
 
 @login_required
 def watchlist_remove(request, listing_id):
     try:
-        item = WatchlistItem.objects.get(
-            listing=Listing.objects.get(pk=listing_id), watcher=request.user)
-        item.delete()
-        # Re-render the page with the new information
-        return listing_view(request, listing_id)
+        listing = Listing.objects.get(pk=listing_id)
+        listing.watchlist_items.remove(request.user)
+        return listing_view(request, listing_id, message='This item has been removed from your wishlist')
     except:
         # If the item doesn't exist or cannot be deleted, return an error to the user
         message = 'An error occurred while attempting to remove this item from your watch list'
         return listing_view(request, listing_id, message, 'error')
-
-
-# View the user's watch list
-
-@login_required
-def watchlist_view(request):
-    # Show the user's watched items with the most recently added at the top
-    return render(request, 'auctions/watchlist.html', {
-        'watchlist_items': WatchlistItem.objects.filter(watcher=request.user).order_by('-id')
-    })
 
 
 # CATEGORY METHODS

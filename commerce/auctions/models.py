@@ -2,9 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Max
 # from django.core.validators import MinValueValidator
-import decimal
+import decimal, pytz
 
 class User(AbstractUser):
+    # Timezones list approach from:  https://stackoverflow.com/a/45867250
+    timezones = tuple(zip(pytz.all_timezones, pytz.all_timezones))
+    timezone = models.CharField(max_length=32, choices=timezones, 
+    default='America/New_York')
 
     def __str__(self):
         return f'{self.username}'
@@ -17,7 +21,7 @@ class Category(models.Model):
         return f'{self.name}'
 
     class Meta:
-        verbose_name_plural = "Categories"
+        verbose_name_plural = 'Categories'
 
 
 class Listing(models.Model):
@@ -70,7 +74,7 @@ class Listing(models.Model):
             max_bid = bids.aggregate(Max('amount'))['amount__max']
             return bids.filter(amount=max_bid)[0].bidder
         except:
-            return "Error determining winner"
+            return 'Error determining winner'
 
 
 class Bid(models.Model):

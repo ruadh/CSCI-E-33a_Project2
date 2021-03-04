@@ -18,6 +18,19 @@
         <div class="form-group">
             <input class="form-control" type="password" name="confirmation" placeholder="Confirm Password">
         </div>
+        <div class="form-group">
+            <!-- Allow the user to select a timezone -->
+            <label for="tz-select">Select Your Timezone:</label>
+            <select name="user_timezone" id="tz-select" class="form-control">
+                {% for timezone in timezones %}
+                    {% if timezone == 'America/New_York' %}
+                        <option value="{{timezone}}" selected="selected">{{timezone}}</option>
+                    {% else %}
+                        <option value="{{timezone}}">{{timezone}}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
         <input class="btn btn-primary" type="submit" value="Register">
     </form>
 

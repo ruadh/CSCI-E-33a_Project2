@@ -8,14 +8,14 @@ from django.db.models import Max
 from django.contrib.auth.decorators import login_required
 from django import forms
 from django.utils import timezone
-import datetime
+import datetime, pytz
 
 
 # SETTINGS
 
 # Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
-placeholder_image = '/static/auctions/default_photo.png'
-default_timezone = 'America/New_York'
+PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'
+DEFAULT_TIMEZONE = 'America/New_York'
 
 
 # FORM CLASSES
@@ -70,6 +70,8 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
+            # Set the display timezone to the user's chosen time
+            timezone.activate(user.timezone)
             # CITATION:  Using 'next' to send the user back to their starting page adapted from:  https://stackoverflow.com/a/21693784
             if next:
                 return HttpResponseRedirect(request.POST.get('next'))
@@ -88,6 +90,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
+    # We don't need to unset the timezone; that is done when index is called
     return HttpResponseRedirect(reverse('index'))
 
 
@@ -110,6 +113,7 @@ def register(request):
         # Attempt to create new user
         try:
             user = User.objects.create_user(username, email, password)
+            user.timezone = request.POST['user_timezone']
             user.save()
         except IntegrityError:
             return render(request, 'auctions/register.html', {
@@ -117,9 +121,14 @@ def register(request):
                 'message_class': 'error'
             })
         login(request, user)
+        # Set the display timezone to the user's chosen time
+        timezone.activate(user.timezone)
         return HttpResponseRedirect(reverse('index'))
     else:
-        return render(request, 'auctions/register.html')
+        timezones = pytz.all_timezones
+        return render(request, 'auctions/register.html', {
+            'timezones': timezones
+        })
 
 
 # LISTING METHODS
@@ -128,8 +137,9 @@ def register(request):
 # NOTE: Default is all active listings, but may be called with different criteria by other methods
 
 def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
-    # I'm calling this here because it's the first page a non-logged-in user will see
-    timezone.activate(default_timezone)
+    # If the user isn't authenticated, set the display timezone to the site's default
+    if not request.user.is_authenticated:
+        timezone.activate(DEFAULT_TIMEZONE)
     return render(request, 'auctions/index.html', {'listings': listings, 'title': title})
 
 
@@ -205,7 +215,7 @@ def listing_add(request):
             if form.cleaned_data['image_url']:
                 image_url = form.cleaned_data['image_url']
             else:
-                image_url = placeholder_image
+                image_url = PLACEHOLDER_IMAGE
 
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
@@ -369,3 +379,10 @@ def bid_add(request):
 
         # Regardless of the outcome, Re-render the page with the current details and any messages
         return listing_view(request, listing.id, message, message_class)
+
+# DEV ONLY
+def dev(request):
+    param = timezones
+    return HttpResponse(param)
+
+

@@ -1,14 +1,17 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Max
-import decimal, pytz
 from django.conf import settings
+from django.core.validators import MinValueValidator
+import decimal
+import pytz
+
 
 class User(AbstractUser):
     # Timezones list approach from:  https://stackoverflow.com/a/45867250
     timezones = tuple(zip(pytz.all_timezones, pytz.all_timezones))
-    timezone = models.CharField(max_length=32, choices=timezones, 
-    default = settings.DEFAULT_TIMEZONE)
+    timezone = models.CharField(max_length=32, choices=timezones,
+                                default=settings.DEFAULT_TIMEZONE)
 
     def __str__(self):
         return f'{self.username}'
@@ -29,52 +32,66 @@ class Listing(models.Model):
         User, on_delete=models.CASCADE, related_name='listings')
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, related_name='listings', null=True, blank=True)
-    watchlist_items = models.ManyToManyField(User, blank=True, related_name='watchlist_items')
+    watchlist_items = models.ManyToManyField(
+        User, blank=True, related_name='watchlist_items')
     title = models.CharField(max_length=150)
     description = models.TextField(max_length=2000)
     starting_price = models.DecimalField(max_digits=9, decimal_places=2)
     is_active = models.BooleanField(default=True)
-    image_url = models.URLField(null=True, blank=True, verbose_name='Image URL')
+    image_url = models.URLField(
+        null=True, blank=True, verbose_name='Image URL')
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    # Default sorting:  most recent listings first
+    # Sort most recent listings first by default
     class Meta:
         ordering = ['-timestamp']
 
     def __str__(self):
         return f'{self.owner.username}\'s {self.title}'
 
-
-    # Calculated current bid price
-    # CITATION:  @property decorator approach based on:  https://stackoverflow.com/a/17682694
-
+    # Count bids for this listing
+    # CITATION:  discovered the @property decorator approach at:  https://stackoverflow.com/a/17682694
     @property
     def bid_count(self):
-        return Bid.objects.filter(listing=self.id).count()
+        return self.bids.count()
 
-
+    # Highest existing bid for this listing
     @property
-    def bid_price(self):
+    def max_bid(self):
         try:
-            bids = Bid.objects.filter(listing=self.id)
-            if bids.count() > 0:
-                max_bid = Bid.objects.filter(listing=self.id).aggregate(Max('amount'))
-                return round(max_bid['amount__max'], 2)
-            else:
-                return self.starting_price
+            bid = self.bids.aggregate(Max('amount'))
+            return round(bid['amount__max'], 2)
         except:
-            return 'Error determining current bid'
+            return None
 
-    # Calculated winner
+    # The minimum valid bid for this item
+    @property
+    def required_bid(self):
+        if self.max_bid is None:
+            return self.starting_price
+        else:
+            return self.max_bid + decimal.Decimal(settings.BID_INCREMENT)
 
+    # The winner of this auction, if any
     @property
     def winner(self):
-        try:
-            bids = Bid.objects.filter(listing=self.id)
-            max_bid = bids.aggregate(Max('amount'))['amount__max']
-            return bids.filter(amount=max_bid)[0].bidder
-        except:
-            return 'Error determining winner'
+        if self.bid_count > 0:
+            try:
+                # From this listing's bid objects, find the one w/ the max bid amount and return its user
+                return self.bids.filter(amount=self.max_bid)[0].bidder
+            except:
+                return 'Error determining winner'
+        else:
+            return None
+
+    # If the user did not supply an image, use the placeholder
+    # NOTE:  Necessary because relative paths fail validation when the listing is updated in the admin interface
+    @property
+    def image_display(self):
+        if self.image_url is None:
+            return settings.PLACEHOLDER_IMAGE
+        else:
+            return self.image_url
 
 
 class Bid(models.Model):
@@ -82,7 +99,8 @@ class Bid(models.Model):
         Listing, on_delete=models.CASCADE, related_name='bids')
     bidder = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bids')
-    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Your bid')
+    amount = models.DecimalField(
+        max_digits=9, decimal_places=2, verbose_name='Your bid')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

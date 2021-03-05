@@ -1,12 +1,14 @@
-<!-- Reusable block that we can use in multiple locations using 'include': https://bit.ly/3b6Ocbc -->
-
 {% block bidding_controls %}
 
     <!-- If the listing is active, show the bid form  -->
     {% if listing.is_active %}
     <h3 id="bid">Bid Now</h3>
-            <p><span class="label">Starting price: </span>${{listing.starting_price}}</p>
-            <p><span class="label">Current price: </span>${{listing.bid_price}}</p>
+        {% if listing.bid_count == 0 %}
+            <p><span class="label">Starting bid: </span>${{listing.starting_price}}</p>
+        {% else %}
+            <p><span class="label">Current bid: </span>${{listing.max_bid}}</p>
+        {% endif %}
+            <p><span class="label">Minimum bid: </span>${{listing.required_bid}}</p>
         {% if user.is_authenticated %}
             <form action="{% url 'bid_add' %}" method="POST" class="bid-form">
                 {% csrf_token %}
@@ -21,12 +23,16 @@
     <!-- If the listing is inactive, show an "auction closed" message -->
     {% else %}
         <h3 id="bid">Auction closed</h3>
-        <p><span class="label">Starting price: </span>${{listing.starting_price}}</p>
-        <p><span class="label">Final price: </span>${{listing.bid_price}}</p>
-        {% if listing.winner == request.user  %}
-            <p>Congratulations! You won this item.</p>
+        {% if listing.bid_count == 0 %}
+            <p><span class="label">Starting bid: </span>${{listing.starting_price}}</p>
+            <p>This auction was canceled by the lister.  There is no winner.</p>
         {% else %}
-            <p>You did not win this item.</p>
+            <p><span class="label">Winning bid: </span>${{listing.max_bid}}</p>
+            {% if listing.winner == request.user  %}
+                <p>Congratulations! You won this item.</p>
+            {% else %}
+                <p>You did not win this item.</p>
+            {% endif %}
         {% endif %}
     {% endif %}
 

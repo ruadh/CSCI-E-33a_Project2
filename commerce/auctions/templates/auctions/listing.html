@@ -4,7 +4,7 @@
   
 <!-- Listing Info -->
 <div class="listing">
-    <img src="{{listing.image_url}}" alt="product image" class="detail-image">
+    <img src="{{listing.image_display}}" alt="product image" class="detail-image">
     <div>
         <!-- Listing details: -->
         <h2>{{listing.title}}</h2> 
@@ -14,7 +14,6 @@
         <p><span class="label">Listed:</span> {{listing.timestamp}} by {{listing.owner}} </p>
         <p><span class="label">Description: </span>{{listing.description}}</p>
 
-
         <!-- Show the owner's or bidder's controls, depending on the user-->
         {% if user == listing.owner %}
             {% include 'auctions/owners_controls.html' %}
@@ -22,27 +21,29 @@
             {% include 'auctions/bidding_controls.html' %}
         {% endif %}
 
-        <!-- Comments block -->
+        <!-- Show existing comments -->
         <h3 id="comments">Comments</h3>
         {% for comment in comments %}
-        <blockquote>
-        <p class="comment-body">{{comment.body}}</p>
-        <p>- {{comment.commenter}}, {{comment.timestamp}}</p>
-        </blockquote>
+            <blockquote>
+            <p class="comment-body">{{comment.body}}</p>
+            <p>- {{comment.commenter}}, {{comment.timestamp}}</p>
+            </blockquote>
         {% endfor %}
+
+        <!-- Comment form -->
         <h4>Leave a Comment</h4>
         {% if user.is_authenticated %}
-        <form action="{% url 'comment_add' %}" method="POST" class="comment-form">
-            {% csrf_token %}
-            {{ comment_form }}
-            <input type="submit" class="btn btn-primary link-as-button">
-        </form>
-    {% else %}
-        <!-- Since we can't call login_view with @login_required, we have to pass the next param in the URL -->
-        <!-- CITATION:  Encoding the "#" for the page anchor from https://drupal.stackexchange.com/a/192902 -->
-        <p>You must <a href="{% url 'login' %}?next=listing/{{listing_id}}%23comments">log in</a> to post comments.</p>
-    {% endif %}
+            <form action="{% url 'comment_add' %}" method="POST" class="comment-form">
+                {% csrf_token %}
+                {{ comment_form }}
+                <input type="submit" class="btn btn-primary link-as-button">
+            </form>
+        {% else %}
+            <!-- Since we can't call login_view with @login_required, we have to pass the next param in the URL -->
+            <!-- CITATION:  Encoding the "#" for the page anchor from https://drupal.stackexchange.com/a/192902 -->
+            <p>You must <a href="{% url 'login' %}?next=listing/{{listing_id}}%23comments">log in</a> to post comments.</p>
+        {% endif %}
+    </div>
 </div>
-
 
 {% endblock %}

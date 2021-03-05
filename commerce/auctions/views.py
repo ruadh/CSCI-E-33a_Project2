@@ -3,17 +3,17 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from .models import User, Listing, Category, Bid, Comment
 from django.db.models import Max
-from django.contrib.auth.decorators import login_required
-from django import forms
-from django.utils import timezone
-import datetime, pytz
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django import forms
+import datetime
+import pytz
+from .models import User, Listing, Category, Bid, Comment
 
 
 # FORM CLASSES
-# Note:  the user and timestamp can be derived, so I'm not including them as form fields
 
 # Comment form
 
@@ -48,7 +48,7 @@ class ListingForm(forms.ModelForm):
                   'starting_price', 'category', 'image_url']
 
 
-# AUTHENTICATION METHODS
+# AUTHENTICATION
 
 # Log in
 
@@ -66,7 +66,7 @@ def login_view(request):
             login(request, user)
             # Set the display timezone to the user's chosen time
             timezone.activate(user.timezone)
-            # CITATION:  Using 'next' to send the user back to their starting page adapted from:  https://stackoverflow.com/a/21693784
+            # CITATION:  Using 'next' to return to starting page:  https://stackoverflow.com/a/21693784
             if next:
                 return HttpResponseRedirect(request.POST.get('next'))
             else:
@@ -126,12 +126,14 @@ def register(request):
         })
 
 
-# LISTING METHODS
+# LISTINGS
 
-# Display a list view of item listings
-# NOTE: Default is all active listings, but may be called with different criteria by other methods
+# Display a list of listings
 
-def index(request, listings=Listing.objects.filter(is_active=True), title='Active Listings'):
+def index(request, listings=None, title='Active Listings'):
+    # Show all active listings, unless a set is passed in
+    if listings is None:
+        listings = Listing.objects.filter(is_active=True)
     # If the user isn't authenticated, set the display timezone to the site's default
     if not request.user.is_authenticated:
         timezone.activate(settings.DEFAULT_TIMEZONE)
@@ -163,7 +165,6 @@ def listing_view(request, listing_id, message=None, message_class=None):
         in_watchlist = False
 
     # Load a blank bid form with the current price
-    bid_form = BidForm(initial={'listing': listing_id})
     bid_form = BidForm(initial={'listing': listing})
 
     # Render the listing detail page
@@ -202,16 +203,10 @@ def listing_add(request):
         title = form.cleaned_data['title']
         description = form.cleaned_data['description']
         starting_price = form.cleaned_data['starting_price']
+        image_url = form.cleaned_data['image_url']
 
-        # Check that the starting price is valid
-        # TO DO: reorder this so it's more readable
+        # Check that the starting price is valid so we can provide a value
         if starting_price > 0:
-            # If no image was supplied, use the placeholder
-            if form.cleaned_data['image_url']:
-                image_url = form.cleaned_data['image_url']
-            else:
-                image_url = settings.PLACEHOLDER_IMAGE
-
             # Re-check for required fields, and save and render the listing
             if title and description and starting_price:
                 listing = Listing(category=category, owner=request.user,  title=title, description=description,
@@ -225,7 +220,9 @@ def listing_add(request):
         else:
             return listing_form(request, form, 'Starting bid must be greater than $0', 'error')
     else:
-        return listing_form(request, form, 'An error occurred while processing your submission.  Your listing has NOT been saved.', 'error')
+        return listing_form(request, form,
+                            'An error occurred while processing your submission.  Your listing has NOT been saved.',
+                            'error')
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner
@@ -263,7 +260,7 @@ def watchlist_add(request, listing_id):
         listing = Listing.objects.get(pk=listing_id)
         listing.watchlist_items.add(request.user)
         return listing_view(request, listing_id, message='This item has been added to your watchlist')
-    except:
+    except Exception:
         message = 'An error occurred while attempting to add this item to your watchlist'
         in_watchlist = False
         return listing_view(request, listing_id, message, 'error')
@@ -276,9 +273,11 @@ def watchlist_remove(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
         listing.watchlist_items.remove(request.user)
+        # .remove() does not give an error if the item is not in the watchlist,
+        # but we don't need to show the user an error - either way, the item ends up not in the list
         return listing_view(request, listing_id, message='This item has been removed from your watchlist')
-    except:
-        # If the item doesn't exist or cannot be deleted, return an error to the user
+    except Exception:
+        # If this fails for any other reason, return an error to the user
         message = 'An error occurred while attempting to remove this item from your watch list'
         return listing_view(request, listing_id, message, 'error')
 
@@ -313,7 +312,7 @@ def category_listing(request, category_id):
 def comment_add(request):
 
     # Validate and save the comment form
-    if request.method == "POST":
+    if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
             listing = form.cleaned_data['listing']
@@ -342,25 +341,22 @@ def comment_add(request):
 
 @login_required
 def bid_add(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = BidForm(request.POST)
-        # Initial assumption is error; we'll unset this if the bid passes validation
         message_class = 'error'
         if form.is_valid():
             # Gather the bid details
             listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
             amount = form.cleaned_data['amount']
-            # If there are any
-            if listing.bid_count == 0 and amount < listing.starting_price:
-                message = 'Your bid must meet or exceed the starting price.'
-            elif listing.bid_count > 0 and amount <= listing.bid_price:
-                message = 'Your bid must be higher than the current price.'
+            # Make sure the bid is high enough
+            if amount < listing.required_bid:
+                message = f'You must bid at least ${listing.required_bid}'
             # Don't allow the user to bid on their own items  (UI should prevent this, but just to be safe)
             elif listing.owner == request.user:
                 message = 'You may not bid on your own listings.'
             # Don't allow the user to bid on a closed listing
             # This could occur if the auction is closed beteween page load and bid submission
-            elif listing.is_active == False:
+            elif not listing.is_active:
                 message = 'Sorry, this auction has ended.'
             # If all validation passes, save the bid
             else:

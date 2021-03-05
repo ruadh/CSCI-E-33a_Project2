@@ -122,16 +122,19 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-# Login URL added 3/1/2021 Jess Reed to support @login_required decorator
+# JESSICA'S UPDATES BEGIN HERE
 
+# Login URL added to support @login_required decorator
 LOGIN_URL = '/login'
+
 
 USE_THOUSAND_SEPARATOR = True
 
-
-# Jessica's default settings
-
+# System's default display timezone - can be overriden by user preference
 DEFAULT_TIMEZONE = 'America/New_York'
 
 # Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
 PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'
+
+# Requires bidders to beat any existing bids by $1
+BID_INCREMENT = 1

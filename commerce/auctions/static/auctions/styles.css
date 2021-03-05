@@ -4,7 +4,8 @@ body {
     margin-right: 50px;
 }
 
-h3, h4 {
+h3,
+h4 {
     margin-top: 1rem;
 }
 
@@ -12,7 +13,14 @@ a {
     padding-bottom: 1rem;
 }
 
-/* Borrowing styling from Boostrap class "form-control" */
+.nav {
+    margin-top: 0.3rem;
+}
+
+
+/* FORMS */
+
+/* Borrowing form styling from Boostrap class "form-control" */
 input,
 select,
 textarea {
@@ -22,7 +30,7 @@ textarea {
     padding: .375rem .75rem;
 }
 
-textarea[name="body"]{
+textarea[name="body"] {
     width: 100%;
     height: 10rem;
     padding: 5px;
@@ -30,65 +38,6 @@ textarea[name="body"]{
 
 .link-as-button {
     width: max-content;
-}
-
-.listing {
-    padding: 1rem;
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border: solid 1px lightgray;
-}
-
-.listing div {
-    display: flex;
-    flex-direction: column;
-}
-
-.thumbnail-image {
-    width: 80%;
-    margin-top: 2rem;
-    margin-bottom: 1.5rem;
-}
-
-.detail-image {
-    height: 50vh;
-    padding-bottom: 2rem;
-}
-
-.message {
-    background-color: whitesmoke;
-    padding: 1rem;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    border-radius: .25rem;
-}
-
-.error {
-    background-color: mistyrose;
-    font-style: italic;
-}
-
-/* Error icon courtesy of Wikimedia Commons user Iniquity https://commons.wikimedia.org/wiki/File:OOjs_UI_icon_error-destructive.svg */
-.error:before {
-    content: "";
-    display: block;
-    background: url("https://upload.wikimedia.org/wikipedia/commons/4/4e/OOjs_UI_icon_error-destructive.svg") no-repeat;
-    width: 20px;
-    height: 20px;
-    float: left;
-    margin: 0 6px 0 0;
-}
-
-.comment-body {
-    font-style: italic;
-}
-
-blockquote {
-    background-color: whitesmoke;
-    padding: 1rem;
-    margin-top: 1rem;
 }
 
 label,
@@ -119,23 +68,90 @@ form input[type="submit"] {
     width: 1px;
 }
 
-.nav {
-    margin-top: 0.3rem;
+
+/* LISTINGS */
+
+.listing {
+    padding: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: solid 1px lightgray;
+}
+
+.listing div {
+    display: flex;
+    flex-direction: column;
+}
+
+.thumbnail-image {
+    width: 80%;
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-image {
+    height: 50vh;
+    padding-bottom: 2rem;
 }
 
 
-/* Larger screens:  Support two-column layouts */
+/* ERROR & CONFIRMATION MESSAGES */
+
+.message {
+    background-color: whitesmoke;
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-radius: .25rem;
+}
+
+.error {
+    background-color: mistyrose;
+    font-style: italic;
+}
+
+/* Error icon courtesy of Wikimedia Commons user Iniquity https://commons.wikimedia.org/wiki/File:OOjs_UI_icon_error-destructive.svg */
+.error:before {
+    content: "";
+    display: block;
+    background: url("https://upload.wikimedia.org/wikipedia/commons/4/4e/OOjs_UI_icon_error-destructive.svg") no-repeat;
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin: 0 6px 0 0;
+}
+
+
+/* COMMENTS  */
+
+.comment-body {
+    font-style: italic;
+}
+
+blockquote {
+    background-color: whitesmoke;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: .25rem;
+}
+
+
+/* RESPONSIVE */
 
 @media(min-width: 720px) {
 
-    h3, h4 {
-        margin-top: 2rem;
-    }
-
+    /* Support a two-column layout on larger screens */
     .listing {
         flex-direction: row;
         border: none;
         align-items: flex-start;
+    }
+
+    h3,
+    h4 {
+        margin-top: 2rem;
     }
 
     .listing div {

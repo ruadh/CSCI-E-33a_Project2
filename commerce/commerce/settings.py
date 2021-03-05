@@ -138,3 +138,9 @@ PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'
 
 # Requires bidders to beat any existing bids by $1
 BID_INCREMENT = 1
+
+
+# Attribution for images used in sample listings: 
+# Cat hair sweater:     https://commons.wikimedia.org/wiki/File:Sphynx_cat_in_orange_sweater.jpg
+# Cat bed:              https://commons.wikimedia.org/wiki/File:A_cat_sleeping_in_a_cat_bed.jpg
+# Leather jacket:       https://commons.wikimedia.org/wiki/File:Lewis_Leathers_Bronx_Aviakit_Jacket.jpg

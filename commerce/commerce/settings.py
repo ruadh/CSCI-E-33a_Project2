@@ -136,8 +136,8 @@ DEFAULT_TIMEZONE = 'America/New_York'
 # Placeholder listing image courtesy of janjf93 on Pixabay:  https://pixabay.com/vectors/day-shield-price-tag-flyers-1727489/
 PLACEHOLDER_IMAGE = '/static/auctions/default_photo.png'
 
-# Requires bidders to beat any existing bids by $1
-BID_INCREMENT = 1
+# Requires bidders to beat any existing bids by the specified amount
+BID_INCREMENT = 0.01
 
 
 # Attribution for images used in sample listings: 

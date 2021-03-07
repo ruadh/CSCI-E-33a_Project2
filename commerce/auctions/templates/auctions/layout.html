@@ -52,10 +52,11 @@
         <hr>
 
         <!-- Message block for confirmation or error messages -->
-        {% if message %}
-            <div class="message {{message_class}}">
-                {{ message }}
-            </div>
+        <!-- CITATION:  Learned about messages framework from:  https://bit.ly/3rs0kJg -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
         {% endif %}
 
         <!-- Content brought in from templates -->

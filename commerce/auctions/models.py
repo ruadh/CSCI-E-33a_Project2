@@ -70,7 +70,7 @@ class Listing(models.Model):
         if self.max_bid is None:
             return self.starting_price
         else:
-            return self.max_bid + decimal.Decimal(settings.BID_INCREMENT)
+            return round(self.max_bid + decimal.Decimal(settings.BID_INCREMENT), 2)
 
     # The winner of this auction, if any
     @property

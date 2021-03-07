@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.db.models import Max
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.utils import timezone
 from django import forms
 import datetime
@@ -72,12 +73,9 @@ def login_view(request):
             else:
                 return HttpResponseRedirect(reverse('index'))
         else:
-            return render(request, 'auctions/login.html', {
-                'message': 'Invalid username and/or password.',
-                'message_class': 'error'
-            })
-    else:
-        return render(request, 'auctions/login.html')
+            messages.error(request, 'Invalid username and/or password.')
+
+    return render(request, 'auctions/login.html')
 
 
 # Log out
@@ -91,17 +89,28 @@ def logout_view(request):
 # Register a new user
 
 def register(request):
+    # Gather a list of timezones to populate the timezone choice field in the form
+    timezones = pytz.common_timezones
+
     if request.method == 'POST':
         username = request.POST['username']
         email = request.POST['email']
 
-        # Ensure password matches confirmation
+        # Ensure password matches confirmation and is not empty
         password = request.POST['password']
         confirmation = request.POST['confirmation']
         if password != confirmation:
+            messages.error(request, 'Passwords must match')
+            # return HttpResponseRedirect('register')
             return render(request, 'auctions/register.html', {
-                'message': 'Passwords must match.',
-                'message_class': 'error'
+                'timezones': timezones,
+                'default_timezone': settings.DEFAULT_TIMEZONE
+            })
+        if password == '':
+            messages.error(request, 'Password cannot be blank')
+            return render(request, 'auctions/register.html', {
+                'timezones': timezones,
+                'default_timezone': settings.DEFAULT_TIMEZONE
             })
 
         # Attempt to create new user
@@ -110,16 +119,18 @@ def register(request):
             user.timezone = request.POST['user_timezone']
             user.save()
         except IntegrityError:
+            messages.error(request, 'Username already taken.')
             return render(request, 'auctions/register.html', {
-                'message': 'Username already taken.',
-                'message_class': 'error'
+                'timezones': timezones,
+                'default_timezone': settings.DEFAULT_TIMEZONE
             })
         login(request, user)
         # Set the display timezone to the user's chosen time
         timezone.activate(user.timezone)
+        # Send the user to the home page
         return HttpResponseRedirect(reverse('index'))
+
     else:
-        timezones = pytz.all_timezones
         return render(request, 'auctions/register.html', {
             'timezones': timezones,
             'default_timezone': settings.DEFAULT_TIMEZONE
@@ -148,7 +159,7 @@ def listings_closed(request):
 
 # Display the detail view of a listing
 
-def listing_view(request, listing_id, message=None, message_class=None):
+def listing_view(request, listing_id):
     listing = Listing.objects.get(pk=listing_id)
 
     # Load a blank comment form and list any existing comments
@@ -174,20 +185,16 @@ def listing_view(request, listing_id, message=None, message_class=None):
         'in_watchlist': in_watchlist,
         'comments': comments,
         'comment_form': comment_form,
-        'bid_form': bid_form,
-        'message': message,
-        'message_class': message_class
+        'bid_form': bid_form
     })
 
 
 # Load the new listing form
 
 @login_required
-def listing_form(request, form=ListingForm(), message=None, message_class=None):
+def listing_form(request, form=ListingForm()):
     return render(request, 'auctions/new_listing.html', {
-        'listing_form': form,
-        'message': message,
-        'message_class': message_class
+        'listing_form': form
     })
 
 
@@ -207,22 +214,23 @@ def listing_add(request):
 
         # Check that the starting price is valid so we can provide a value
         if starting_price > 0:
-            # Re-check for required fields, and save and render the listing
+            # Re-check for required fields, and save and display the listing
             if title and description and starting_price:
                 listing = Listing(category=category, owner=request.user,  title=title, description=description,
                                   starting_price=starting_price, image_url=image_url, )
                 listing.save()
                 return listing_view(request, listing.id)
             else:
+                messages.error(request, 'Please enter all required fields')
                 return render(request, 'auctions/new_listing.html', {
                     'listing_form': form
                 })
         else:
-            return listing_form(request, form, 'Starting bid must be greater than $0', 'error')
+            messages.error(request, 'Starting bid must be greater than $0')
+            return listing_form(request, form)
     else:
-        return listing_form(request, form,
-                            'An error occurred while processing your submission.  Your listing has NOT been saved.',
-                            'error')
+        messages.error(request, 'An error occurred while processing your submission.  Your listing has NOT been saved.')
+        return listing_form(request, form)
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner
@@ -250,20 +258,20 @@ def watchlist_view(request):
 
 
 # Add a listing to the user's watchlist
-
 # NOTE:  I chose to allow users to include their own listings and closed listings on their watch lists,
-#           since users may need to track them, and the spec includes no features for doing that
+#           since we are not providing any other way for users to track those things
 
 @login_required
 def watchlist_add(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
         listing.watchlist_items.add(request.user)
-        return listing_view(request, listing_id, message='This item has been added to your watchlist')
+        messages.success(request, 'This item has been added to your watchlist')
     except Exception:
-        message = 'An error occurred while attempting to add this item to your watchlist'
-        in_watchlist = False
-        return listing_view(request, listing_id, message, 'error')
+        messages.error(
+            request, 'An error occurred while attempting to add this item to your watchlist')
+    finally:
+        return HttpResponseRedirect(reverse('listing', args=[listing_id]))
 
 
 # Remove a listing from the user's watchlist
@@ -275,11 +283,14 @@ def watchlist_remove(request, listing_id):
         listing.watchlist_items.remove(request.user)
         # .remove() does not give an error if the item is not in the watchlist,
         # but we don't need to show the user an error - either way, the item ends up not in the list
-        return listing_view(request, listing_id, message='This item has been removed from your watchlist')
+        messages.success(
+            request, 'This item has been removed from your watchlist')
     except Exception:
         # If this fails for any other reason, return an error to the user
-        message = 'An error occurred while attempting to remove this item from your watch list'
-        return listing_view(request, listing_id, message, 'error')
+        messages.error(
+            request, 'An error occurred while attempting to remove this item from your watchlist')
+    finally:
+        return HttpResponseRedirect(reverse('listing', args=[listing_id]))
 
 
 # CATEGORY METHODS
@@ -322,17 +333,19 @@ def comment_add(request):
             if body:
                 comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
                 ), listing=listing, body=body)
-                # Save the comment to the database and re-render the page
+                # Save the comment to the database and refresh the listing page
                 comment.save()
-                message = 'Thank you for your comment.'
-                message_class = None
+                messages.success(request, 'Thank you for your comment')
             else:
-                message = 'Your comment cannot be blank.'
-                message_class = 'error'
+                messages.error(request, 'Your comment cannot be blank.')
+            # Refresh the listing page and show a success or error message
+            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+
         else:
-            message = 'An error occurred while processing your submission.  Your comment has NOT been saved.'
-            message_class = 'error'
-        return listing_view(request, listing.id, message, message_class)
+            messages.error(
+                request, 'An error occurred while processing your submission.  Your comment has NOT been saved.')
+            # If we don't have a valid form, we don't have a listing ID, so take the user back to the index
+            return HttpResponseRedirect(reverse('index'))
 
 
 # BIDDING METHODS
@@ -343,30 +356,29 @@ def comment_add(request):
 def bid_add(request):
     if request.method == 'POST':
         form = BidForm(request.POST)
-        message_class = 'error'
         if form.is_valid():
             # Gather the bid details
             listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
             amount = form.cleaned_data['amount']
-            # Make sure the bid is high enough
+            # Validate the form on the backend
             if amount < listing.required_bid:
-                message = f'You must bid at least ${listing.required_bid}'
-            # Don't allow the user to bid on their own items  (UI should prevent this, but just to be safe)
+                messages.error(
+                    request, f'You must bid at least ${listing.required_bid}')
             elif listing.owner == request.user:
-                message = 'You may not bid on your own listings.'
-            # Don't allow the user to bid on a closed listing
-            # This could occur if the auction is closed beteween page load and bid submission
+                messages.error(
+                    request, 'You may not bid on your own listings.')
             elif not listing.is_active:
-                message = 'Sorry, this auction has ended.'
+                messages.error(request, 'Sorry, this auction has ended.')
             # If all validation passes, save the bid
             else:
                 bid = Bid(bidder=request.user, listing=listing,
                           amount=amount, timestamp=datetime.datetime.now())
                 bid.save()
-                message = 'Thank you for your bid'
-                message_class = None
+                messages.success(request, 'Thank you for your bid')
+            # Refresh the listing page and show a success or error message
+            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+        # If we don't have a valid form, we don't have a listing ID, so take the user back to the index
         else:
-            message = 'An unexpected error occurred.  Your bid has NOT been saved.'
-
-        # Regardless of the outcome, Re-render the page with the current details and any messages
-        return listing_view(request, listing.id, message, message_class)
+            messages.error(
+                request, 'An error occurred while validating your bid.  Your bid has NOT been saved.')
+            return HttpResponseRedirect(reverse('index'))

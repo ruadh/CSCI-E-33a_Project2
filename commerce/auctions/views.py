@@ -202,34 +202,22 @@ def listing_form(request, form=ListingForm()):
 
 @login_required
 def listing_add(request):
-
-    # Validate form submission and gather values
     form = ListingForm(request.POST)
     if form.is_valid():
+        # Create a Listing object from the form data
         category = form.cleaned_data['category']
         title = form.cleaned_data['title']
         description = form.cleaned_data['description']
         starting_price = form.cleaned_data['starting_price']
         image_url = form.cleaned_data['image_url']
-
-        # Check that the starting price is valid so we can provide a value
-        if starting_price > 0:
-            # Re-check for required fields, and save and display the listing
-            if title and description and starting_price:
-                listing = Listing(category=category, owner=request.user,  title=title, description=description,
-                                  starting_price=starting_price, image_url=image_url, )
-                listing.save()
-                return listing_view(request, listing.id)
-            else:
-                messages.error(request, 'Please enter all required fields')
-                return render(request, 'auctions/new_listing.html', {
-                    'listing_form': form
-                })
-        else:
-            messages.error(request, 'Starting bid must be greater than $0')
-            return listing_form(request, form)
+        listing = Listing(category=category, owner=request.user,  title=title, description=description,
+                          starting_price=starting_price, image_url=image_url, )
+        # Save the new listing to the DB and display it's listing page
+        listing.save()
+        return listing_view(request, listing.id)
     else:
-        messages.error(request, 'An error occurred while processing your submission.  Your listing has NOT been saved.')
+        messages.error(
+            request, 'Invalid form entry.  Please fix the issues below and resubmit.')
         return listing_form(request, form)
 
 

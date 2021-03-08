@@ -36,7 +36,8 @@ class Listing(models.Model):
         User, blank=True, related_name='watchlist_items')
     title = models.CharField(max_length=150)
     description = models.TextField(max_length=2000)
-    starting_price = models.DecimalField(max_digits=9, decimal_places=2)
+    starting_price = models.DecimalField(max_digits=9, decimal_places=2, validators=[
+                                         MinValueValidator(decimal.Decimal('0.01'))])
     is_active = models.BooleanField(default=True)
     image_url = models.URLField(
         null=True, blank=True, verbose_name='Image URL')
@@ -50,7 +51,7 @@ class Listing(models.Model):
         return f'{self.owner.username}\'s {self.title}'
 
     # Count bids for this listing
-    # CITATION:  discovered the @property decorator approach at:  https://stackoverflow.com/a/17682694
+    # CITATION:  Learned the @property decorator approach from:  https://stackoverflow.com/a/17682694
     @property
     def bid_count(self):
         return self.bids.count()
@@ -85,7 +86,7 @@ class Listing(models.Model):
             return None
 
     # If the user did not supply an image, use the placeholder
-    # NOTE:  Necessary because relative paths fail validation when the listing is updated in the admin interface
+    # NOTE:  Necessary because relative paths fail URL field validation when the listing is updated in the admin interface
     @property
     def image_display(self):
         if self.image_url is None:
@@ -99,9 +100,9 @@ class Bid(models.Model):
         Listing, on_delete=models.CASCADE, related_name='bids')
     bidder = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bids')
+    timestamp = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(
         max_digits=9, decimal_places=2, verbose_name='Your bid')
-    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.bidder.username} for {self.listing.title}: ${self.amount}'

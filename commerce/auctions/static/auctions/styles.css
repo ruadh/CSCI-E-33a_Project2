@@ -112,8 +112,15 @@ form input[type="submit"] {
     font-style: italic;
 }
 
+.errorlist {
+    background-color: mistyrose;
+    font-style: italic;
+    list-style: none;
+}
+
 /* Error icon courtesy of Wikimedia Commons user Iniquity https://commons.wikimedia.org/wiki/File:OOjs_UI_icon_error-destructive.svg */
-.error:before {
+.error:before,
+.errorlist:before {
     content: "";
     display: block;
     background: url("https://upload.wikimedia.org/wikipedia/commons/4/4e/OOjs_UI_icon_error-destructive.svg") no-repeat;

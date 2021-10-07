@@ -64,7 +64,6 @@ def login_view(request):
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
-        next = request.POST['next']
 
         # Check if authentication successful
         if user is not None:
@@ -166,11 +165,6 @@ def listings_closed(request):
 def listing_view(request, listing_id):
     listing = Listing.objects.get(pk=listing_id)
 
-    # Load a blank comment form and list any existing comments
-    comment_form = CommentForm(initial={'listing': listing_id})
-    comments = Comment.objects.filter(
-        listing=listing_id).order_by('timestamp')
-
     # Determine whether this listing is in the user's watchlist
     if request.user.is_authenticated:
         # POST-GRADING:  Originally used a query on request.user.id until Vlad told me that request.user was already a User object
@@ -178,17 +172,14 @@ def listing_view(request, listing_id):
     else:
         in_watchlist = False
 
-    # Load a blank bid form with the current price
-    bid_form = BidForm(initial={'listing': listing})
-
     # Render the listing detail page
     return render(request, 'auctions/listing.html', {
         'listing_id': listing_id,
         'listing': listing,
         'in_watchlist': in_watchlist,
-        'comments': comments,
-        'comment_form': comment_form,
-        'bid_form': bid_form
+        'comments': Comment.objects.filter(listing=listing_id).order_by('timestamp'),
+        'comment_form': CommentForm(initial={'listing': listing_id}),
+        'bid_form': BidForm(initial={'listing': listing})
     })
 
 
@@ -200,7 +191,7 @@ def listing_add(request):
     if request.method == 'POST':
         form = ListingForm(request.POST)
         if form.is_valid():
-            # CITATION:  Model form handling based on the cookbook example from section
+            # POST-GRADING:  Model form handling refactored based on the cookbook example from Vlad's section
             # Save the new listing locally, so we can add the owner attribute
             listing = form.save(commit=False)
             listing.owner = request.user
@@ -212,8 +203,8 @@ def listing_add(request):
             return render(request, 'auctions/new_listing.html', {
             'listing_form': form
         })
-    # It not posting, load the page with a blank new listing form
-    # POST-GRADING:  Merged the new form functionality into this function based on Vlad's feedback
+    # It we're not posting, load the page with a blank new listing form
+    # POST-GRADING:  Merged the "new form" functionality into this function based on Vlad's feedback
     else:
         return render(request, 'auctions/new_listing.html', {
         'listing_form': ListingForm()
@@ -314,14 +305,11 @@ def comment_add(request):
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
-            listing = form.cleaned_data['listing']
-            body = form.cleaned_data['body']
-
+            # POST-GRADING:  Model form handling refactored based on the cookbook example from Vlad's section
+            # Save the comment locally first, so we can add the commenter and timestamp
+            comment = form.save(commit=False)
             # Non-empty body validation is performed on the model level, but let's double-check
-            if body:
-                # Save the comment locally first, so we can add the commenter and timestamp
-                # CITATION:  Model form handling based on the cookbook example from section
-                comment = form.save(commit=False)
+            if comment.body:
                 comment.commenter = request.user
                 comment.timestamp = datetime.datetime.now()
                 comment.save()
@@ -329,7 +317,7 @@ def comment_add(request):
             else:
                 messages.error(request, 'Your comment cannot be blank.')
             # Refresh the listing page and show a success or error message
-            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+            return HttpResponseRedirect(reverse('listing', args=[comment.listing.id]))
 
         else:
             messages.error(
@@ -347,11 +335,12 @@ def bid_add(request):
     if request.method == 'POST':
         form = BidForm(request.POST)
         if form.is_valid():
-            # Gather the bid details
-            listing = Listing.objects.get(pk=form.cleaned_data['listing'].id)
-            amount = form.cleaned_data['amount']
+            # POST-GRADING:  Model form handling refactored based on the cookbook example from Vlad's section
+            # Save the bid locally so we can test 
+            bid = form.save(commit=False)
+            listing = bid.listing
             # Validate the form on the backend
-            if amount < listing.required_bid:
+            if bid.amount < listing.required_bid:
                 messages.error(
                     request, f'You must bid at least ${listing.required_bid}')
             elif listing.owner == request.user:
@@ -361,8 +350,8 @@ def bid_add(request):
                 messages.error(request, 'Sorry, this auction has ended.')
             # If all validation passes, save the bid
             else:
-                bid = Bid(bidder=request.user, listing=listing,
-                          amount=amount, timestamp=datetime.datetime.now())
+                bid.bidder = request.user
+                bid.timestamp = datetime.datetime.now()
                 bid.save()
                 messages.success(request, 'Thank you for your bid')
             # Refresh the listing page and show a success or error message

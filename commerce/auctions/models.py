@@ -8,6 +8,7 @@ import pytz
 
 
 class User(AbstractUser):
+    # The spec did not call for local time zones, but users would expect it, and it was a fun problem to explore
     # Timezones list approach from:  https://stackoverflow.com/a/45867250
     timezones = tuple(zip(pytz.all_timezones, pytz.all_timezones))
     timezone = models.CharField(max_length=32, choices=timezones,

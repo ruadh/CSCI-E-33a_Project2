@@ -1,3 +1,7 @@
+# Note:  This submission is based on homework I submitted when I took this class in Spring 2021
+#        I have added comments marked "POST-GRADING" to show where I made changes based on Vlad's grading feedback
+#        Other changes that were not based on TF feedback are not called out.
+
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -189,36 +193,37 @@ def listing_view(request, listing_id):
     })
 
 
-# Load the new listing form
-
-@login_required
-def listing_form(request, form=ListingForm()):
-    return render(request, 'auctions/new_listing.html', {
-        'listing_form': form
-    })
-
-
 # Create a new listing
 
 @login_required
 def listing_add(request):
-    form = ListingForm(request.POST)
-    if form.is_valid():
-        # Create a Listing object from the form data
-        category = form.cleaned_data['category']
-        title = form.cleaned_data['title']
-        description = form.cleaned_data['description']
-        starting_price = form.cleaned_data['starting_price']
-        image_url = form.cleaned_data['image_url']
-        listing = Listing(category=category, owner=request.user,  title=title, description=description,
-                          starting_price=starting_price, image_url=image_url, )
-        # Save the new listing to the DB and display it's listing page
-        listing.save()
-        return listing_view(request, listing.id)
+    # If we're posting data, attempt to process the form
+    if request.method == 'POST':
+        form = ListingForm(request.POST)
+        if form.is_valid():
+            # Create a Listing object from the form data
+            category = form.cleaned_data['category']
+            title = form.cleaned_data['title']
+            description = form.cleaned_data['description']
+            starting_price = form.cleaned_data['starting_price']
+            image_url = form.cleaned_data['image_url']
+            listing = Listing(category=category, owner=request.user,  title=title, description=description,
+                            starting_price=starting_price, image_url=image_url, )
+            # Save the new listing to the DB and display its listing page
+            listing.save()
+            return listing_view(request, listing.id)
+        else:
+            messages.error(
+                request, 'Invalid form entry.  Please fix the issues below and resubmit.')
+            return render(request, 'auctions/new_listing.html', {
+            'listing_form': form
+        })
+    # It not posting, load the page with a blank new listing form
+    # POST-GRADING:  Merged the new form functionality into this function based on Vlad's feedback
     else:
-        messages.error(
-            request, 'Invalid form entry.  Please fix the issues below and resubmit.')
-        return listing_form(request, form)
+        return render(request, 'auctions/new_listing.html', {
+        'listing_form': ListingForm()
+    })
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner

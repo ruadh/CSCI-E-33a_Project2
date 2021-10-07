@@ -32,7 +32,7 @@
             </li>
             {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'listing_form' %}">New Listing</a>
+                    <a class="nav-link" href="{% url 'listing_add' %}">New Listing</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'watchlist_view' %}">My Watchlist</a>

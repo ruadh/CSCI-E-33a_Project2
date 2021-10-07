@@ -173,9 +173,8 @@ def listing_view(request, listing_id):
 
     # Determine whether this listing is in the user's watchlist
     if request.user.is_authenticated:
-        user = User.objects.get(pk=request.user.id)
-        watchlist_items = user.watchlist_items.all()
-        in_watchlist = listing in watchlist_items
+        # POST-GRADING:  Originally used a query on request.user.id until Vlad told me that request.user was already a User object
+        in_watchlist = listing in request.user.watchlist_items.all()
     else:
         in_watchlist = False
 
@@ -201,15 +200,10 @@ def listing_add(request):
     if request.method == 'POST':
         form = ListingForm(request.POST)
         if form.is_valid():
-            # Create a Listing object from the form data
-            category = form.cleaned_data['category']
-            title = form.cleaned_data['title']
-            description = form.cleaned_data['description']
-            starting_price = form.cleaned_data['starting_price']
-            image_url = form.cleaned_data['image_url']
-            listing = Listing(category=category, owner=request.user,  title=title, description=description,
-                            starting_price=starting_price, image_url=image_url, )
-            # Save the new listing to the DB and display its listing page
+            # CITATION:  Model form handling based on the cookbook example from section
+            # Save the new listing locally, so we can add the owner attribute
+            listing = form.save(commit=False)
+            listing.owner = request.user
             listing.save()
             return listing_view(request, listing.id)
         else:
@@ -232,6 +226,7 @@ def listing_add(request):
 def close_listing(request, listing_id):
     # Mark the listing as closed
     listing = Listing.objects.get(pk=listing_id)
+    # TO DO: error handling
     listing.is_active = False
     listing.save()
     # Re-render the page with the new information
@@ -245,8 +240,8 @@ def close_listing(request, listing_id):
 @login_required
 def watchlist_view(request):
     # Gather the current user's watchlist
-    user = User.objects.get(pk=request.user.id)
-    watchlist_items = user.watchlist_items.all()
+    # POST-GRADING:  Originally used a query on request.user.id until Vlad told me that request.user was already a User object
+    watchlist_items = request.user.watchlist_items.all()
     return index(request, watchlist_items, 'My Watchlist')
 
 
@@ -324,9 +319,11 @@ def comment_add(request):
 
             # Non-empty body validation is performed on the model level, but let's double-check
             if body:
-                comment = Comment(commenter=request.user, timestamp=datetime.datetime.now(
-                ), listing=listing, body=body)
-                # Save the comment to the database and refresh the listing page
+                # Save the comment locally first, so we can add the commenter and timestamp
+                # CITATION:  Model form handling based on the cookbook example from section
+                comment = form.save(commit=False)
+                comment.commenter = request.user
+                comment.timestamp = datetime.datetime.now()
                 comment.save()
                 messages.success(request, 'Thank you for your comment')
             else:

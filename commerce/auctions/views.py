@@ -5,6 +5,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
+from django.http.response import Http404
 from django.shortcuts import render
 from django.urls import reverse
 from django.db.models import Max
@@ -163,11 +164,15 @@ def listings_closed(request):
 # Display the detail view of a listing
 
 def listing_view(request, listing_id):
-    listing = Listing.objects.get(pk=listing_id)
+    # CITATION:  error checking based on cookbook example in Vlad's section
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except Listing.DoesNotExist:
+        raise Http404("Listing does not exist")
 
     # Determine whether this listing is in the user's watchlist
     if request.user.is_authenticated:
-        # POST-GRADING:  Originally used a query on request.user.id until Vlad told me that request.user was already a User object
+        # POST-GRADING:  Didn't realize request.user was already a User object
         in_watchlist = listing in request.user.watchlist_items.all()
     else:
         in_watchlist = False
@@ -201,14 +206,14 @@ def listing_add(request):
             messages.error(
                 request, 'Invalid form entry.  Please fix the issues below and resubmit.')
             return render(request, 'auctions/new_listing.html', {
-            'listing_form': form
-        })
+                'listing_form': form
+            })
     # It we're not posting, load the page with a blank new listing form
     # POST-GRADING:  Merged the "new form" functionality into this function based on Vlad's feedback
     else:
         return render(request, 'auctions/new_listing.html', {
-        'listing_form': ListingForm()
-    })
+            'listing_form': ListingForm()
+        })
 
 
 # Close a listing:  ends the auction, making the highest bidder the winner
@@ -216,7 +221,11 @@ def listing_add(request):
 @login_required
 def close_listing(request, listing_id):
     # Mark the listing as closed
-    listing = Listing.objects.get(pk=listing_id)
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except Listing.DoesNotExist:
+        raise Http404("Listing does not exist")
+
     # TO DO: error handling
     listing.is_active = False
     listing.save()
@@ -231,7 +240,7 @@ def close_listing(request, listing_id):
 @login_required
 def watchlist_view(request):
     # Gather the current user's watchlist
-    # POST-GRADING:  Originally used a query on request.user.id until Vlad told me that request.user was already a User object
+    # POST-GRADING:  Didn't realize that request.user was already a User object
     watchlist_items = request.user.watchlist_items.all()
     return index(request, watchlist_items, 'My Watchlist')
 
@@ -289,7 +298,10 @@ def category_listing(request, category_id):
         category_name = 'Uncategorized'
         listings = Listing.objects.filter(category=None, is_active=True)
     else:
-        category_name = Category.objects.get(pk=category_id).name
+        try:
+            category_name = Category.objects.get(pk=category_id).name
+        except Category.DoesNotExist:
+            raise Http404("Category does not exist")
         listings = Listing.objects.filter(category=category_id, is_active=True)
     return index(request, listings, category_name)
 
@@ -336,7 +348,7 @@ def bid_add(request):
         form = BidForm(request.POST)
         if form.is_valid():
             # POST-GRADING:  Model form handling refactored based on the cookbook example from Vlad's section
-            # Save the bid locally so we can test 
+            # Save the bid locally so we can test
             bid = form.save(commit=False)
             listing = bid.listing
             # Validate the form on the backend

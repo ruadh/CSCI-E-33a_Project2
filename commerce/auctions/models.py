@@ -63,7 +63,7 @@ class Listing(models.Model):
         try:
             bid = self.bids.aggregate(Max('amount'))
             return round(bid['amount__max'], 2)
-        except:
+        except Exception:
             return None
 
     # The minimum valid bid for this item
@@ -81,13 +81,13 @@ class Listing(models.Model):
             try:
                 # From this listing's bid objects, find the one w/ the max bid amount and return its user
                 return self.bids.filter(amount=self.max_bid)[0].bidder
-            except:
+            except Exception:
                 return 'Error determining winner'
         else:
             return None
 
     # If the user did not supply an image, use the placeholder
-    # NOTE:  Necessary because relative paths fail URL field validation when the listing is updated in the admin interface
+    # NOTE:  Needed because relative paths fail URL field validation when listing is updated in the admin interface
     @property
     def image_display(self):
         if self.image_url is None:
